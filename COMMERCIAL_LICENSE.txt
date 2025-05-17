@@ -1,0 +1,33 @@
+Commercial License for GLGpuSelect
+
+This is a commercial license agreement between ArthurVasseur ("Licensor") and the licensee ("You").
+
+By obtaining, copying, or using this software under this license, you agree to the following terms:
+
+1. Grant of License  
+   The Licensor grants You a non-exclusive, non-transferable, worldwide license to use, modify, and distribute GLGpuSelect in proprietary, commercial, or closed-source products.
+
+2. Fees  
+   Use of GLGpuSelect under the Commercial License requires a paid license agreement. Please contact the Licensor at contact@arthurvasseur.fr to obtain pricing and terms.
+
+3. No Copyleft Requirements  
+   This commercial license removes the requirement to disclose source code, distribute under the GPLv3, or apply copyleft obligations.
+
+4. No Warranty  
+   GLGpuSelect is provided "as is", without warranty of any kind. The Licensor shall not be held liable for any damages arising from use of GLGpuSelect.
+
+5. Restrictions  
+   This license does not permit sublicensing, redistribution of the software as a development tool or SDK, or use in illegal or unethical activities.
+
+6. Termination  
+   This license is effective until terminated. It will terminate automatically if You breach any of its terms. Upon termination, You must cease all use and destroy all copies of GLGpuSelect.
+
+7. Governing Law  
+   This agreement shall be governed by and construed in accordance with the laws of [Your Country or Region].
+
+To obtain a commercial license, please contact:  
+Arthur Vasseur
+Email: contact@arthurvasseur.fr
+Website: arthurvasseur.fr
+
+This license is separate from the open-source GPL-3.0 license. If you choose to use GLGpuSelect under the GPL-3.0, you are not required to pay a fee but must comply with all terms of the GPL-3.0 license.
