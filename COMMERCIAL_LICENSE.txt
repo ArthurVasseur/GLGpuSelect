@@ -1,6 +1,6 @@
 Commercial License for GLGpuSelect
 
-This is a commercial license agreement between ArthurVasseur ("Licensor") and the licensee ("You").
+This is a commercial license agreement between Arthur Vasseur ("Licensor") and the licensee ("You").
 
 By obtaining, copying, or using this software under this license, you agree to the following terms:
 
@@ -23,7 +23,7 @@ By obtaining, copying, or using this software under this license, you agree to t
    This license is effective until terminated. It will terminate automatically if You breach any of its terms. Upon termination, You must cease all use and destroy all copies of GLGpuSelect.
 
 7. Governing Law  
-   This agreement shall be governed by and construed in accordance with the laws of [Your Country or Region].
+   This agreement shall be governed by and construed in accordance with the laws of France.
 
 To obtain a commercial license, please contact:  
 Arthur Vasseur
