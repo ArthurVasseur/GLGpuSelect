@@ -16,6 +16,7 @@
 #undef min
 #undef max
 #define NT_SUCCESS(v) (v >= 0)
+#include "OpenGl32/IcdLibrary/Wgl/WglIcdLibrary.hpp"
 #endif
 namespace glgpus
 {
@@ -25,10 +26,10 @@ namespace glgpus
 		static NTSTATUS QueryAdapterInfo(D3DKMT_HANDLE adapter_h, KMTQUERYADAPTERINFOTYPE info_type, void* info, size_t info_size)
 		{
 			D3DKMT_QUERYADAPTERINFO adapterInfo = {
-			   .hAdapter = adapter_h,
-			   .Type = info_type,
-			   .pPrivateDriverData = info,
-			   .PrivateDriverDataSize = static_cast<UINT>(info_size),
+				.hAdapter = adapter_h,
+				.Type = info_type,
+				.pPrivateDriverData = info,
+				.PrivateDriverDataSize = static_cast<UINT>(info_size),
 			};
 			return D3DKMTQueryAdapterInfo(&adapterInfo);
 		}
@@ -176,7 +177,11 @@ namespace glgpus
 	std::unique_ptr<IcdLoader> IcdLoader::s_instance = nullptr;
 
 	IcdLoader::IcdLoader() :
-		m_selectedPixelFormatIndex(0)
+#ifdef CCT_PLATFORM_WINDOWS
+		m_icdLibrary(std::make_unique<WglIcdLibrary>()),
+#endif
+		m_selectedPixelFormatIndex(0),
+		m_currentValue(nullptr)
 	{
 	}
 
@@ -213,28 +218,19 @@ namespace glgpus
 
 		return MakeResult(glgpusResult::Success);
 	}
-#ifdef CCT_PLATFORM_WINDOWS
-	static HMODULE GetThisDllHandle()
-	{
-		MEMORY_BASIC_INFORMATION info;
-		size_t len = VirtualQueryEx(GetCurrentProcess(), (void*)GetThisDllHandle, &info, sizeof(info));
-		return len ? (HMODULE)info.AllocationBase : NULL;
-	}
-#endif
 
 	cct::UInt32 IcdLoader::ChooseDevice(cct::UInt64 pDeviceUuid)
 	{
-		auto icdPathResult =
 #ifdef CCT_PLATFORM_WINDOWS
-			wddm::ChooseDevice(pDeviceUuid);
+		auto icdPathResult = wddm::ChooseDevice(pDeviceUuid);
 #else
 			std::vector<AdapterInfo>();
 #endif
 		if (icdPathResult.IsError())
 			return MakeResult(icdPathResult.GetError(), "Failed to choose device");
 
-		m_icd.Load(icdPathResult.GetValue());
-		if (!m_icd.IsLoaded())
+		m_icdLibrary->Load(icdPathResult.GetValue());
+		if (!m_icdLibrary->IsLoaded())
 			return MakeResult(glgpusResult::Unknown, "Could not open icd file for the given device");
 
 		AdapterInfo* adapterInfo = nullptr;
@@ -255,9 +251,10 @@ namespace glgpus
 		return 0;
 	}
 
-	cct::DynLib& IcdLoader::GetIcd()
+	IcdLibrary& IcdLoader::GetIcd() const
 	{
-		return m_icd;
+		CCT_ASSERT(m_icdLibrary != nullptr, "ICD library is not loaded");
+		return *m_icdLibrary;
 	}
 
 	void IcdLoader::SetSelectedPixelFormatIndex(cct::Int32 pixelFormatIndex)
@@ -278,7 +275,7 @@ namespace glgpus
 		m_deviceContextByThread[std::this_thread::get_id()] = &currentDeviceContext;
 	}
 
-	IcdDeviceContextWrapper* IcdLoader::GetCurrentDeviceContextForCurrentThread()
+	IcdDeviceContextWrapper* IcdLoader::GetCurrentDeviceContextForCurrentThread() const
 	{
 		std::scoped_lock _(m_deviceContextByThreadMutex);
 
@@ -303,6 +300,22 @@ namespace glgpus
 	const std::vector<AdapterInfo>& IcdLoader::GetAdapterInfos() const
 	{
 		return m_adapterInfos;
+	}
+
+	void IcdLoader::SetCurrentValue(void* currentValue)
+	{
+		auto* currentDeviceContext = GetCurrentDeviceContextForCurrentThread();
+		if (currentDeviceContext && currentDeviceContext->DeviceContext)
+			currentDeviceContext->DeviceContext->SetCurrentValue(currentValue);
+		else m_currentValue = currentValue;
+	}
+
+	void* IcdLoader::GetCurrentValue() const
+	{
+		auto* currentDeviceContext = GetCurrentDeviceContextForCurrentThread();
+		if (currentDeviceContext && currentDeviceContext->DeviceContext)
+			return currentDeviceContext->DeviceContext->GetCurrentValue();
+		return m_currentValue;
 	}
 }
 

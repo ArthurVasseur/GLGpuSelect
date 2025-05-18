@@ -8,7 +8,8 @@ namespace glgpus
 {
 	DeviceContext::DeviceContext(void* platformDeviceContext) :
 		m_dispatchTable(),
-		m_platformDeviceContext(platformDeviceContext)
+		m_platformDeviceContext(platformDeviceContext),
+		m_currentValue(nullptr)
 	{
 		CCT_ASSERT(platformDeviceContext != nullptr, "Invalid device context");
 	}
@@ -46,5 +47,15 @@ namespace glgpus
 	void* DeviceContext::GetPlatformDeviceContext() const
 	{
 		return m_platformDeviceContext;
+	}
+
+	void DeviceContext::SetCurrentValue(void* currentValue)
+	{
+		m_currentValue = currentValue;
+	}
+
+	void* DeviceContext::GetCurrentValue() const
+	{
+		return m_currentValue;
 	}
 } // namespace glgpus

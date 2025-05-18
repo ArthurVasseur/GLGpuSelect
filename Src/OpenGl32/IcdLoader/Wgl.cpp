@@ -9,6 +9,7 @@
 
 #include "OpenGl32/IcdLoader/Wgl.hpp"
 #include "OpenGl32/DeviceContext/DeviceContext.hpp"
+#include "OpenGl32/IcdLibrary/Wgl/WglIcdLibrary.hpp"
 #include "OpenGl32/IcdLoader/IcdLoader.hpp"
 
 #ifdef CCT_PLATFORM_WINDOWS
@@ -75,33 +76,18 @@ namespace
 
 GLGPUS_EXPORT void CCT_CALL wglSetCurrentValue(void* value)
 {
-	CCT_ASSERT_FALSE("Not implemented");
-	return;
+	glgpus::IcdLoader::Instance()->SetCurrentValue(value);
 }
 
 GLGPUS_EXPORT void* CCT_CALL wglGetCurrentValue()
 {
-	auto wglGetCurrentValuePFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<void*>("DrvGetCurrentValue");
-	if (!wglGetCurrentValuePFN)
-	{
-		CCT_ASSERT_FALSE("Could not find wglGetCurrentValuePFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return nullptr;
-	}
-	return wglGetCurrentValuePFN();
+	return glgpus::IcdLoader::Instance()->GetCurrentValue();
 }
 
 GLGPUS_EXPORT DHGLRC CCT_CALL wglGetDHGLRC(glgpus::IcdDeviceContextWrapper* context)
 {
 	if (context)
 		return context->IcdDeviceContext;
-
-	auto wglGetDHGLRCPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<DHGLRC, void*>("DrvGetDHGLRC");
-	if (wglGetDHGLRCPFN)
-		return wglGetDHGLRCPFN(context);
-
-	CCT_ASSERT_FALSE("Could not find DHGLRC");
-
 	return nullptr;
 }
 
@@ -136,19 +122,8 @@ GLGPUS_EXPORT int CCT_CALL wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRI
 			return -1;
 		}
 
-		auto& icd = glgpusInstance->GetIcd();
-		auto DrvValidateVersionFunc = icd.GetFunction<BOOL, ULONG>("DrvValidateVersion");
-
-		if (!DrvValidateVersionFunc)
-			return glgpus::MakeResult(glgpus::glgpusResult::Unknown, "Invalid icd implementation");
-
-		if (DrvValidateVersionFunc(selectedAdapter.openGlVersion) == 0)
+		if (glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvValidateVersion(selectedAdapter.openGlVersion) == 0)
 			return glgpus::MakeResult(glgpus::glgpusResult::Unknown, "Invalid version");
-
-		auto DrvSetCallbackProcsFunc = icd.GetFunction<void, int, PROC*>("DrvSetCallbackProcs");
-
-		if (!DrvSetCallbackProcsFunc)
-			return glgpus::MakeResult(glgpus::glgpusResult::Unknown, "Invalid icd implementation");
 
 		// Must follow WGLCALLBACKS in gldrv.h
 		// On an ATI ICD, other values seems to not be supported, it makes the driver crash
@@ -158,25 +133,17 @@ GLGPUS_EXPORT int CCT_CALL wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRI
 			reinterpret_cast<FARPROC>(wglGetDHGLRC),
 		};
 
-		DrvSetCallbackProcsFunc(callbacks.size(), callbacks.data());
+		glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvSetCallbackProcs(callbacks.size(), callbacks.data());
 	}
 
-	auto drvDescribePixelFormatPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<LONG, HDC, INT, ULONG, PIXELFORMATDESCRIPTOR*>("DrvDescribePixelFormat");
-	if (!drvDescribePixelFormatPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find drvDescribePixelFormatPFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return -1;
-	}
-
-	auto count = drvDescribePixelFormatPFN(hdc, 0, 0, nullptr);
+	auto count = glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvDescribePixelFormat(hdc, 0, 0, nullptr);
 	int bestIndex = 0;
 	int bestScore = std::numeric_limits<int>::max();
 
 	for (long i = 1; i <= count; ++i)
 	{
 		PIXELFORMATDESCRIPTOR pixelFormatDescriptor;
-		drvDescribePixelFormatPFN(hdc, i, sizeof(PIXELFORMATDESCRIPTOR), &pixelFormatDescriptor);
+		glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvDescribePixelFormat(hdc, i, sizeof(PIXELFORMATDESCRIPTOR), &pixelFormatDescriptor);
 		if (int score = ScorePFD(ppfd, &pixelFormatDescriptor); score < bestScore)
 		{
 			bestScore = score;
@@ -193,14 +160,7 @@ GLGPUS_EXPORT int CCT_CALL wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRI
 
 int wglSetPixelFormat(HDC hdc, int format, [[maybe_unused]] const PIXELFORMATDESCRIPTOR* ppfd)
 {
-	auto DrvSetPixelFormatPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<BOOL, HDC, int>("DrvSetPixelFormat");
-	if (!DrvSetPixelFormatPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find DrvSetPixelFormatPFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return -1;
-	}
-	return DrvSetPixelFormatPFN(hdc, format);
+	return glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvSetPixelFormat(hdc, format);
 }
 
 int wglGetPixelFormat(HDC hdc)
@@ -210,27 +170,12 @@ int wglGetPixelFormat(HDC hdc)
 
 int wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, PIXELFORMATDESCRIPTOR* ppfd)
 {
-	auto DrvDescribePixelFormatPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<int, HDC, int, UINT, PIXELFORMATDESCRIPTOR*>("DrvDescribePixelFormat");
-	if (!DrvDescribePixelFormatPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find DrvDescribePixelFormatPFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return -1;
-	}
-	return DrvDescribePixelFormatPFN(hdc, iPixelFormat, nBytes, ppfd);
+	return glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvDescribePixelFormat(hdc, iPixelFormat, nBytes, ppfd);
 }
 
 HGLRC wglCreateContext(HDC hdc)
 {
-	auto wglCreateContextPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<HGLRC, HDC>("DrvCreateContext");
-	if (!wglCreateContextPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find wglCreateContextPFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return nullptr;
-	}
-
-	auto icdDeviceContext = wglCreateContextPFN(hdc);
+	auto icdDeviceContext = glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvCreateContext(hdc);
 
 	if (icdDeviceContext == nullptr)
 	{
@@ -251,15 +196,7 @@ HGLRC wglCreateContext(HDC hdc)
 
 HGLRC wglCreateLayerContext(HDC hdc, int layerPlane)
 {
-	auto wglCreateLayerContextPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<HGLRC, HDC, int>("DrvCreateLayerContext");
-	if (!wglCreateLayerContextPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find wglCreateLayerContextPFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return nullptr;
-	}
-
-	auto icdDeviceContext = wglCreateLayerContextPFN(hdc, layerPlane);
+	auto icdDeviceContext = glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvCreateLayerContext(hdc, layerPlane);
 
 	if (icdDeviceContext == nullptr)
 	{
@@ -304,19 +241,11 @@ BOOL wglDeleteContext(HGLRC hglrc)
 			return false;
 	}
 
-	auto wglDeleteContextPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<BOOL, HGLRC>("DrvDeleteContext");
-	if (!wglDeleteContextPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find DrvDeleteContext in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return false;
-	}
-
 #ifdef GLGPUS_LOG_CONTEXT_MANIPULATION
 	cct::Logger::Warning("wglDeleteContext(hglrc {}) associated hdc: {}", icdDeviceContextWrapper->IcdDeviceContext, icdDeviceContextWrapper->DeviceContext->GetPlatformDeviceContext());
 #endif
 
-	bool result = wglDeleteContextPFN(static_cast<HGLRC>(icdDeviceContextWrapper->IcdDeviceContext));
+	bool result = glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvDeleteContext(static_cast<HGLRC>(icdDeviceContextWrapper->IcdDeviceContext));
 	delete icdDeviceContextWrapper->DeviceContext;
 	delete icdDeviceContextWrapper;
 
@@ -346,16 +275,7 @@ BOOL wglMakeCurrent(HDC hdc, HGLRC hglrc)
 	if (icdDeviceContextWrapper == nullptr)
 	{
 		if (glgpus::IcdDeviceContextWrapper* currentContext = glgpuInstance->GetCurrentDeviceContextForCurrentThread())
-		{
-			auto DrvReleaseContextPFN = glgpuInstance->GetIcd().GetFunction<BOOL, DHGLRC>("DrvReleaseContext");
-			if (!DrvReleaseContextPFN)
-			{
-				CCT_ASSERT_FALSE("Could not find DrvSetContextPFN in ICD");
-				SetLastError(ERROR_PROC_NOT_FOUND);
-				return false;
-			}
-			DrvReleaseContextPFN(currentContext->IcdDeviceContext);
-		}
+			glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvReleaseContext(currentContext->IcdDeviceContext);
 		glgpuInstance->ResetCurrentDeviceContextForCurrentThread();
 		return true;
 	}
@@ -369,15 +289,7 @@ BOOL wglMakeCurrent(HDC hdc, HGLRC hglrc)
 		return false;
 	}
 
-	auto DrvSetContextPFN = glgpuInstance->GetIcd().GetFunction<const glgpus::GlProcTable*, HDC, HGLRC, glgpus::PFN_SetProcTable>("DrvSetContext");
-	if (!DrvSetContextPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find DrvSetContextPFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return false;
-	}
-
-	const auto* dispatchTable = DrvSetContextPFN(hdc, static_cast<HGLRC>(icdDeviceContextWrapper->IcdDeviceContext), SetProcTable);
+	const auto* dispatchTable = glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvSetContext(hdc, static_cast<HGLRC>(icdDeviceContextWrapper->IcdDeviceContext), SetProcTable);
 
 	if (!dispatchTable)
 	{
@@ -420,75 +332,32 @@ BOOL wglShareLists(HGLRC hglrc1, HGLRC hglrc2)
 		return false;
 	}
 
-	auto wglShareListsPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<BOOL, HGLRC, HGLRC>("DrvShareLists");
-	if (!wglShareListsPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find wglShareListsPFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return 0;
-	}
-
-	return wglShareListsPFN(static_cast<HGLRC>(icdDeviceContextWrapper1->IcdDeviceContext), static_cast<HGLRC>(icdDeviceContextWrapper2->IcdDeviceContext));
+	return glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvShareLists(static_cast<HGLRC>(icdDeviceContextWrapper1->IcdDeviceContext), static_cast<HGLRC>(icdDeviceContextWrapper2->IcdDeviceContext));
 }
 
 BOOL wglCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask)
 {
-	auto wglCopyContextPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<BOOL, HGLRC, HGLRC, UINT>("DrvCopyContext");
-	if (!wglCopyContextPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find wglCopyContextPFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return 0;
-	}
-	return wglCopyContextPFN(hglrcSrc, hglrcDst, mask);
+	return glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvCopyContext(hglrcSrc, hglrcDst, mask);
 }
 
 int  wglDescribeLayerPlane(HDC hdc, int pixelFormat, int layerPlane, UINT nBytes, void* plpd)
 {
-	auto wglDescribeLayerPlanePFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<int, HDC, int, int, UINT, void*>("DrvDescribeLayerPlane");
-	if (!wglDescribeLayerPlanePFN)
-	{
-		CCT_ASSERT_FALSE("Could not find wglDescribeLayerPlanePFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return 0;
-	}
-	return wglDescribeLayerPlanePFN(hdc, pixelFormat, layerPlane, nBytes, plpd);
+	return glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvDescribeLayerPlane(hdc, pixelFormat, layerPlane, nBytes, plpd);
 }
 
 BOOL wglRealizeLayerPalette(HDC hdc, int layerPlane, BOOL bRealize)
 {
-	auto wglRealizeLayerPalettePFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<BOOL, HDC, int, BOOL>("DrvRealizeLayerPalette");
-	if (!wglRealizeLayerPalettePFN)
-	{
-		CCT_ASSERT_FALSE("Could not find wglRealizeLayerPalettePFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return 0;
-	}
-	return wglRealizeLayerPalettePFN(hdc, layerPlane, bRealize);
+	return glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvRealizeLayerPalette(hdc, layerPlane, bRealize);
 }
 
 int  wglSetLayerPaletteEntries(HDC hdc, int pixelFormat, int layerPlane, int numEntries, const void* pe)
 {
-	auto wglSetLayerPaletteEntriesPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<int, HDC, int, int, int, const void*>("DrvSetLayerPaletteEntries");
-	if (!wglSetLayerPaletteEntriesPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find wglSetLayerPaletteEntriesPFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return 0;
-	}
-	return wglSetLayerPaletteEntriesPFN(hdc, pixelFormat, layerPlane, numEntries, pe);
+	return glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvSetLayerPaletteEntries(hdc, pixelFormat, layerPlane, numEntries, pe);
 }
 
 int  wglGetLayerPaletteEntries(HDC hdc, int pixelFormat, int layerPlane, int ne, int* pe)
 {
-	auto wglGetLayerPaletteEntriesPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<int, HDC, int, int, int, int*>("DrvGetLayerPaletteEntries");
-	if (!wglGetLayerPaletteEntriesPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find wglGetLayerPaletteEntriesPFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return 0;
-	}
-	return wglGetLayerPaletteEntriesPFN(hdc, pixelFormat, layerPlane, ne, pe);
+	return glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvGetLayerPaletteEntries(hdc, pixelFormat, layerPlane, ne, pe);
 }
 
 BOOL wglSwapBuffers(HDC hdc)
@@ -496,15 +365,7 @@ BOOL wglSwapBuffers(HDC hdc)
 	if (SwapBuffersRuntimeCheck(hdc) == nullptr)
 		return false;
 
-	auto wglSwapBuffersPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<BOOL, HDC>("DrvSwapBuffers");
-	if (!wglSwapBuffersPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find wglSwapBuffersPFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return 0;
-	}
-
-	return wglSwapBuffersPFN(hdc);
+	return glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvSwapBuffers(hdc);
 }
 
 BOOL wglSwapLayerBuffers(HDC hdc, UINT fuPlanes)
@@ -512,14 +373,7 @@ BOOL wglSwapLayerBuffers(HDC hdc, UINT fuPlanes)
 	if (SwapBuffersRuntimeCheck(hdc) == nullptr)
 		return false;
 
-	auto wglSwapLayerBuffersPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<BOOL, HDC, UINT>("DrvSwapLayerBuffers");
-	if (!wglSwapLayerBuffersPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find wglSwapLayerBuffersPFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return 0;
-	}
-	return wglSwapLayerBuffersPFN(hdc, fuPlanes);
+	return glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvSwapLayerBuffers(hdc, fuPlanes);
 }
 
 void* wglGetProcAddress(LPCSTR lpszProc)
@@ -530,15 +384,7 @@ void* wglGetProcAddress(LPCSTR lpszProc)
 	if (const auto func = GetProcAddress(GetThisDllHandle(), lpszProc))
 		return reinterpret_cast<void*>(func);
 
-	auto wglGetProcAddressPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<void*, LPCSTR>("DrvGetProcAddress");
-	if (!wglGetProcAddressPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find wglGetProcAddressPFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return nullptr;
-	}
-
-	if (const auto func = wglGetProcAddressPFN(lpszProc))
+	if (const auto func = glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvGetProcAddress(lpszProc))
 		return func;
 
 	return nullptr;
@@ -546,26 +392,14 @@ void* wglGetProcAddress(LPCSTR lpszProc)
 
 BOOL wglUseFontBitmaps(HDC hdc, DWORD first, DWORD count, DWORD listBase)
 {
-	auto wglUseFontBitmapsPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<BOOL, HDC, DWORD, DWORD, DWORD>("DrvUseFontBitmaps");
-	if (!wglUseFontBitmapsPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find wglUseFontBitmapsPFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return 0;
-	}
-	return wglUseFontBitmapsPFN(hdc, first, count, listBase);
+	CCT_ASSERT_FALSE("Not implemented");
+	return false;
 }
 
 BOOL wglUseFontOutlines(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, void* lpgmf)
 {
-	auto wglUseFontOutlinesPFN = glgpus::IcdLoader::Instance()->GetIcd().GetFunction<BOOL, HDC, DWORD, DWORD, DWORD, FLOAT, FLOAT, int, void*>("DrvUseFontOutlines");
-	if (!wglUseFontOutlinesPFN)
-	{
-		CCT_ASSERT_FALSE("Could not find wglUseFontOutlinesPFN in ICD");
-		SetLastError(ERROR_PROC_NOT_FOUND);
-		return 0;
-	}
-	return wglUseFontOutlinesPFN(hdc, first, count, listBase, deviation, extrusion, format, lpgmf);
+	CCT_ASSERT_FALSE("Not implemented");
+	return false;
 }
 
 #endif

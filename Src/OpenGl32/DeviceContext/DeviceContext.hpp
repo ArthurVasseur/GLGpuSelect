@@ -24,10 +24,14 @@ namespace glgpus
 		void SetInactive();
 
 		void* GetPlatformDeviceContext() const;
+		void SetCurrentValue(void* currentValue);
+		void* GetCurrentValue() const;
+
 	private:
 		GlDispatchTable m_dispatchTable;
 		std::thread::id m_activeOnThread;
 		void* m_platformDeviceContext;
+		void* m_currentValue;
 	};
 
 	struct IcdDeviceContextWrapper
