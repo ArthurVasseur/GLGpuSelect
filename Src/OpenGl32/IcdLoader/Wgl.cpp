@@ -354,14 +354,14 @@ BOOL wglRealizeLayerPalette(HDC hdc, int layerPlane, BOOL bRealize)
 	return GetWglIcdLibrary().DrvRealizeLayerPalette(hdc, layerPlane, bRealize);
 }
 
-int  wglSetLayerPaletteEntries(HDC hdc, int pixelFormat, int layerPlane, int numEntries, const void* pe)
+int  wglSetLayerPaletteEntries(HDC hdc, int layerPlane, int start, int numEntries, const void* pe)
 {
-	return GetWglIcdLibrary().DrvSetLayerPaletteEntries(hdc, pixelFormat, layerPlane, numEntries, pe);
+	return GetWglIcdLibrary().DrvSetLayerPaletteEntries(hdc, layerPlane, start, numEntries, pe);
 }
 
-int  wglGetLayerPaletteEntries(HDC hdc, int pixelFormat, int layerPlane, int ne, int* pe)
+int  wglGetLayerPaletteEntries(HDC hdc, int layerPlane, int start, int numEntries, int* pcr)
 {
-	return GetWglIcdLibrary().DrvGetLayerPaletteEntries(hdc, pixelFormat, layerPlane, ne, pe);
+	return GetWglIcdLibrary().DrvGetLayerPaletteEntries(hdc, layerPlane, start, numEntries, pcr);
 }
 
 BOOL wglSwapBuffers(HDC hdc)
