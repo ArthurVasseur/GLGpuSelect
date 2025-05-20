@@ -57,9 +57,3 @@ namespace glgpus
 		void* m_currentValue;
 	};
 }
-
-
-GLGPUS_EXPORT cct::UInt32 CCT_CALL EnumerateDevices(cct::UInt32* pPhysicalDeviceCount, AdapterInfo* pDevices);
-GLGPUS_EXPORT cct::UInt32 CCT_CALL ChooseDevice(cct::UInt64 pDeviceUuid);
-
-

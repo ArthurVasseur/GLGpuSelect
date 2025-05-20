@@ -7,16 +7,8 @@
 #include <Concerto/Core/Types.hpp>
 #include <Concerto/Core/Assert.hpp>
 #include <Concerto/Core/DeferredExit.hpp>
+#include "OpenGl32/GLGpuSelect.h"
 
-#ifdef CCT_PLATFORM_WINDOWS
-#define CCT_CALL __stdcall
-#define CCT_NO_INLINE __declspec(noinline)
-#else
-#define CCT_CALL
-#define  CCT_NO_INLINE __attribute__((noinline))
-#endif
-
-#define GLGPUS_EXPORT extern "C" CCT_EXPORT
 
 #define GLGPUS_FROM_HANDLE(type, name, handle)	\
 	type* name = type::FromHandle(handle)

@@ -60,25 +60,26 @@ struct PIXELFORMATDESCRIPTOR
 };
 
 
-GLGPUS_EXPORT int CCT_CALL wglSetPixelFormat(HDC hdc, int format, [[maybe_unused]] const PIXELFORMATDESCRIPTOR* ppfd);
-GLGPUS_EXPORT int CCT_CALL wglGetPixelFormat(HDC hdc);
-GLGPUS_EXPORT int CCT_CALL wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, PIXELFORMATDESCRIPTOR* ppfd);
-GLGPUS_EXPORT HGLRC CCT_CALL wglCreateContext(HDC hdc);
-GLGPUS_EXPORT HGLRC CCT_CALL wglCreateLayerContext(HDC hdc, int layerPlane);
-GLGPUS_EXPORT BOOL CCT_CALL wglDeleteContext(HGLRC hglrc);
-GLGPUS_EXPORT BOOL CCT_CALL wglMakeCurrent(HDC hdc, HGLRC hglrc);
-GLGPUS_EXPORT HGLRC CCT_CALL wglGetCurrentContext();
-GLGPUS_EXPORT HDC  CCT_CALL wglGetCurrentDC();
-GLGPUS_EXPORT BOOL CCT_CALL wglShareLists(HGLRC hglrc1, HGLRC hglrc2);
-GLGPUS_EXPORT BOOL CCT_CALL wglCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask);
-GLGPUS_EXPORT int  CCT_CALL wglDescribeLayerPlane(HDC hdc, int pixelFormat, int layerPlane, UINT nBytes, void* plpd);
-GLGPUS_EXPORT BOOL CCT_CALL wglRealizeLayerPalette(HDC hdc, int layerPlane, BOOL bRealize);
-GLGPUS_EXPORT int  CCT_CALL wglSetLayerPaletteEntries(HDC hdc, int pixelFormat, int layerPlane, int numEntries, const void* pe);
-GLGPUS_EXPORT int  CCT_CALL wglGetLayerPaletteEntries(HDC hdc, int pixelFormat, int layerPlane, int ne, int* pe);
-GLGPUS_EXPORT BOOL CCT_CALL wglSwapBuffers(HDC hdc);
-GLGPUS_EXPORT BOOL CCT_CALL wglSwapLayerBuffers(HDC hdc, UINT fuPlanes);
-GLGPUS_EXPORT void* CCT_CALL wglGetProcAddress(LPCSTR lpszProc);
-GLGPUS_EXPORT BOOL CCT_CALL wglUseFontBitmaps(HDC hdc, DWORD first, DWORD count, DWORD listBase);
-GLGPUS_EXPORT BOOL CCT_CALL wglUseFontOutlines(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, void* lpgmf);
+extern "C" GLGPUS_API int CCT_CALL wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd);
+extern "C" GLGPUS_API int CCT_CALL wglSetPixelFormat(HDC hdc, int format, [[maybe_unused]] const PIXELFORMATDESCRIPTOR* ppfd);
+extern "C" GLGPUS_API int CCT_CALL wglGetPixelFormat(HDC hdc);
+extern "C" GLGPUS_API int CCT_CALL wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, PIXELFORMATDESCRIPTOR* ppfd);
+extern "C" GLGPUS_API HGLRC CCT_CALL wglCreateContext(HDC hdc);
+extern "C" GLGPUS_API HGLRC CCT_CALL wglCreateLayerContext(HDC hdc, int layerPlane);
+extern "C" GLGPUS_API BOOL CCT_CALL wglDeleteContext(HGLRC hglrc);
+extern "C" GLGPUS_API BOOL CCT_CALL wglMakeCurrent(HDC hdc, HGLRC hglrc);
+extern "C" GLGPUS_API HGLRC CCT_CALL wglGetCurrentContext();
+extern "C" GLGPUS_API HDC  CCT_CALL wglGetCurrentDC();
+extern "C" GLGPUS_API BOOL CCT_CALL wglShareLists(HGLRC hglrc1, HGLRC hglrc2);
+extern "C" GLGPUS_API BOOL CCT_CALL wglCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask);
+extern "C" GLGPUS_API int  CCT_CALL wglDescribeLayerPlane(HDC hdc, int pixelFormat, int layerPlane, UINT nBytes, void* plpd);
+extern "C" GLGPUS_API BOOL CCT_CALL wglRealizeLayerPalette(HDC hdc, int layerPlane, BOOL bRealize);
+extern "C" GLGPUS_API int  CCT_CALL wglSetLayerPaletteEntries(HDC hdc, int pixelFormat, int layerPlane, int numEntries, const void* pe);
+extern "C" GLGPUS_API int  CCT_CALL wglGetLayerPaletteEntries(HDC hdc, int pixelFormat, int layerPlane, int ne, int* pe);
+extern "C" GLGPUS_API BOOL CCT_CALL wglSwapBuffers(HDC hdc);
+extern "C" GLGPUS_API BOOL CCT_CALL wglSwapLayerBuffers(HDC hdc, UINT fuPlanes);
+extern "C" GLGPUS_API void* CCT_CALL wglGetProcAddress(LPCSTR lpszProc);
+extern "C" GLGPUS_API BOOL CCT_CALL wglUseFontBitmaps(HDC hdc, DWORD first, DWORD count, DWORD listBase);
+extern "C" GLGPUS_API BOOL CCT_CALL wglUseFontOutlines(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, void* lpgmf);
 
 #endif // CCT_PLATFORM_WINDOWS

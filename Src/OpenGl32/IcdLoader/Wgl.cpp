@@ -78,24 +78,24 @@ namespace
 	}
 }
 
-GLGPUS_EXPORT void CCT_CALL wglSetCurrentValue(void* value)
+extern "C" GLGPUS_API void CCT_CALL wglSetCurrentValue(void* value)
 {
 	glgpus::IcdLoader::Instance()->SetCurrentValue(value);
 }
 
-GLGPUS_EXPORT void* CCT_CALL wglGetCurrentValue()
+extern "C" GLGPUS_API void* CCT_CALL wglGetCurrentValue()
 {
 	return glgpus::IcdLoader::Instance()->GetCurrentValue();
 }
 
-GLGPUS_EXPORT DHGLRC CCT_CALL wglGetDHGLRC(glgpus::IcdDeviceContextWrapper* context)
+extern "C" GLGPUS_API DHGLRC CCT_CALL wglGetDHGLRC(glgpus::IcdDeviceContextWrapper* context)
 {
 	if (context)
 		return context->IcdDeviceContext;
 	return nullptr;
 }
 
-GLGPUS_EXPORT int CCT_CALL wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
+int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 {
 	auto* glgpusInstance = glgpus::IcdLoader::Instance();
 	if (glgpusInstance == nullptr)

@@ -49,7 +49,7 @@ def generate_dispatch_table(cmds, h_path: str, cpp_path: str):
                 parameters.append(f"{ptype} {pname}")
             default_ret_type = "" if ret_type == "void" else "{}"
             cpp.write("""
-GLGPUS_EXPORT {ret_type} CCT_CALL {name}({parameters})
+extern "C" GLGPUS_API {ret_type} CCT_CALL {name}({parameters})
 {{
     auto* instance = glgpus::IcdLoader::Instance();
     if (!instance)

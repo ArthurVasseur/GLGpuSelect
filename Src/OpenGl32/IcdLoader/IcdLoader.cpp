@@ -319,7 +319,7 @@ namespace glgpus
 	}
 }
 
-cct::UInt32 EnumerateDevices(cct::UInt32* pPhysicalDeviceCount, AdapterInfo* pDevices)
+cct::UInt32 glgpusEnumerateDevices(cct::UInt32* pPhysicalDeviceCount, AdapterInfo* pDevices)
 {
 	auto* instance = glgpus::IcdLoader::Instance();
 	if (!instance)
@@ -331,7 +331,7 @@ cct::UInt32 EnumerateDevices(cct::UInt32* pPhysicalDeviceCount, AdapterInfo* pDe
 	return instance->EnumerateAdapters(pPhysicalDeviceCount, pDevices);
 }
 
-cct::UInt32 ChooseDevice(cct::UInt64 pDeviceUuid)
+cct::UInt32 glgpusChooseDevice(cct::UInt64 pDeviceUuid)
 {
 	auto* instance = glgpus::IcdLoader::Instance();
 	if (!instance)
