@@ -6,7 +6,7 @@
 
 #include <thread>
 
-#include "OpenGl32/GlDispatchTable.hpp"
+#include "OpenGl32/OpenGlFunctions.hpp"
 
 namespace glgpus
 {
@@ -15,8 +15,8 @@ namespace glgpus
 	public:
 		DeviceContext(void* platformDeviceContext);
 
-		void SetGlDispatchTable(const GlDispatchTable& dispatchTable);
-		const GlDispatchTable& GetGlDispatchTable() const;
+		void SetGlDispatchTable(const OpenGlDispatchTable& dispatchTable);
+		const OpenGlDispatchTable& GetGlDispatchTable() const;
 
 		bool IsActiveOnCurrentThread() const;
 		void SetActiveOnCurrentThread();
@@ -28,7 +28,7 @@ namespace glgpus
 		void* GetCurrentValue() const;
 
 	private:
-		GlDispatchTable m_dispatchTable;
+		OpenGlDispatchTable m_dispatchTable;
 		std::thread::id m_activeOnThread;
 		void* m_platformDeviceContext;
 		void* m_currentValue;

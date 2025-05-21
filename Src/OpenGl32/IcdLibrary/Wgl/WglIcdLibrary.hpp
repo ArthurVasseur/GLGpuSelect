@@ -6,7 +6,7 @@
 
 #include <Concerto/Core/DynLib.hpp>
 
-#include "OpenGl32/GlDispatchTable.hpp"
+#include "OpenGl32/WglDispatchTable.hpp"
 #include "OpenGl32/IcdLoader/IcdLoader.hpp"
 #include "OpenGl32/IcdLoader/Wgl.hpp"
 

@@ -97,6 +97,8 @@ extern "C" GLGPUS_API DHGLRC CCT_CALL wglGetDHGLRC(glgpus::IcdDeviceContextWrapp
 
 int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	auto* glgpusInstance = glgpus::IcdLoader::Instance();
 	if (glgpusInstance == nullptr)
 	{
@@ -140,6 +142,9 @@ int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 		GetWglIcdLibrary().DrvSetCallbackProcs(callbacks.size(), callbacks.data());
 	}
 
+	if (ppfd == nullptr)
+		return true;
+
 	auto count = GetWglIcdLibrary().DrvDescribePixelFormat(hdc, 0, 0, nullptr);
 	int bestIndex = 0;
 	int bestScore = std::numeric_limits<int>::max();
@@ -164,21 +169,29 @@ int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 
 int wglSetPixelFormat(HDC hdc, int format, [[maybe_unused]] const PIXELFORMATDESCRIPTOR* ppfd)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	return GetWglIcdLibrary().DrvSetPixelFormat(hdc, format);
 }
 
 int wglGetPixelFormat(HDC hdc)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	return glgpus::IcdLoader::Instance()->GetSelectedPixelFormatIndex();
 }
 
 int wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, PIXELFORMATDESCRIPTOR* ppfd)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	return GetWglIcdLibrary().DrvDescribePixelFormat(hdc, iPixelFormat, nBytes, ppfd);
 }
 
 HGLRC wglCreateContext(HDC hdc)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	auto icdDeviceContext = GetWglIcdLibrary().DrvCreateContext(hdc);
 
 	if (icdDeviceContext == nullptr)
@@ -200,6 +213,8 @@ HGLRC wglCreateContext(HDC hdc)
 
 HGLRC wglCreateLayerContext(HDC hdc, int layerPlane)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	auto icdDeviceContext = GetWglIcdLibrary().DrvCreateLayerContext(hdc, layerPlane);
 
 	if (icdDeviceContext == nullptr)
@@ -222,6 +237,8 @@ HGLRC wglCreateLayerContext(HDC hdc, int layerPlane)
 
 BOOL wglDeleteContext(HGLRC hglrc)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	if (hglrc == nullptr)
 	{
 		CCT_ASSERT_FALSE("Null context passed to wglDeleteContext");
@@ -263,6 +280,8 @@ void SetProcTable(const glgpus::GlProcTable*)
 
 BOOL wglMakeCurrent(HDC hdc, HGLRC hglrc)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	auto* icdDeviceContextWrapper = reinterpret_cast<glgpus::IcdDeviceContextWrapper*>(hglrc);
 
 	auto* glgpuInstance = glgpus::IcdLoader::Instance();
@@ -295,6 +314,7 @@ BOOL wglMakeCurrent(HDC hdc, HGLRC hglrc)
 
 	const auto* dispatchTable = GetWglIcdLibrary().DrvSetContext(hdc, static_cast<HGLRC>(icdDeviceContextWrapper->IcdDeviceContext), SetProcTable);
 
+
 	if (!dispatchTable)
 	{
 		CCT_ASSERT_FALSE("DrvSetContext failed");
@@ -303,13 +323,18 @@ BOOL wglMakeCurrent(HDC hdc, HGLRC hglrc)
 
 	glgpuInstance->SetCurrentDeviceContextForCurrentThread(*icdDeviceContextWrapper);
 	if (icdDeviceContextWrapper->DeviceContext)
-		icdDeviceContextWrapper->DeviceContext->SetGlDispatchTable(dispatchTable->glDispatchTable);
+	{
+		auto openglDispatchTable = glgpus::WglDispatchTableToOpenGlDispatchTable(dispatchTable->WglDispatchTable);
+		icdDeviceContextWrapper->DeviceContext->SetGlDispatchTable(openglDispatchTable);
+	}
 
 	return true;
 }
 
 HGLRC wglGetCurrentContext()
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	auto* deviceContext = glgpus::IcdLoader::Instance()->GetCurrentDeviceContextForCurrentThread();
 	if (deviceContext == nullptr)
 		return nullptr;
@@ -318,6 +343,8 @@ HGLRC wglGetCurrentContext()
 
 HDC  wglGetCurrentDC()
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	auto* deviceContext = glgpus::IcdLoader::Instance()->GetCurrentDeviceContextForCurrentThread();
 	if (deviceContext == nullptr || deviceContext->DeviceContext == nullptr)
 		return nullptr;
@@ -326,6 +353,8 @@ HDC  wglGetCurrentDC()
 
 BOOL wglShareLists(HGLRC hglrc1, HGLRC hglrc2)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	auto* icdDeviceContextWrapper1 = reinterpret_cast<glgpus::IcdDeviceContextWrapper*>(hglrc1);
 	auto* icdDeviceContextWrapper2 = reinterpret_cast<glgpus::IcdDeviceContextWrapper*>(hglrc2);
 
@@ -341,31 +370,43 @@ BOOL wglShareLists(HGLRC hglrc1, HGLRC hglrc2)
 
 BOOL wglCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	return GetWglIcdLibrary().DrvCopyContext(hglrcSrc, hglrcDst, mask);
 }
 
 int  wglDescribeLayerPlane(HDC hdc, int pixelFormat, int layerPlane, UINT nBytes, void* plpd)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	return GetWglIcdLibrary().DrvDescribeLayerPlane(hdc, pixelFormat, layerPlane, nBytes, plpd);
 }
 
 BOOL wglRealizeLayerPalette(HDC hdc, int layerPlane, BOOL bRealize)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	return GetWglIcdLibrary().DrvRealizeLayerPalette(hdc, layerPlane, bRealize);
 }
 
 int  wglSetLayerPaletteEntries(HDC hdc, int layerPlane, int start, int numEntries, const void* pe)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	return GetWglIcdLibrary().DrvSetLayerPaletteEntries(hdc, layerPlane, start, numEntries, pe);
 }
 
 int  wglGetLayerPaletteEntries(HDC hdc, int layerPlane, int start, int numEntries, int* pcr)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	return GetWglIcdLibrary().DrvGetLayerPaletteEntries(hdc, layerPlane, start, numEntries, pcr);
 }
 
 BOOL wglSwapBuffers(HDC hdc)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	if (SwapBuffersRuntimeCheck(hdc) == nullptr)
 		return false;
 
@@ -374,6 +415,8 @@ BOOL wglSwapBuffers(HDC hdc)
 
 BOOL wglSwapLayerBuffers(HDC hdc, UINT fuPlanes)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	if (SwapBuffersRuntimeCheck(hdc) == nullptr)
 		return false;
 
@@ -382,6 +425,8 @@ BOOL wglSwapLayerBuffers(HDC hdc, UINT fuPlanes)
 
 void* wglGetProcAddress(LPCSTR lpszProc)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	if (const auto func = glgpus::GetFromDispatchTable(lpszProc))
 		return func;
 
@@ -396,12 +441,16 @@ void* wglGetProcAddress(LPCSTR lpszProc)
 
 BOOL wglUseFontBitmaps(HDC hdc, DWORD first, DWORD count, DWORD listBase)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	CCT_ASSERT_FALSE("Not implemented");
 	return false;
 }
 
 BOOL wglUseFontOutlines(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, void* lpgmf)
 {
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
 	CCT_ASSERT_FALSE("Not implemented");
 	return false;
 }

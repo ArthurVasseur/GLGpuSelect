@@ -1,8 +1,13 @@
 add_rules("mode.debug", "mode.release")
 add_repositories("Concerto-xrepo https://github.com/ConcertoEngine/xmake-repo.git main")
 add_requires("concerto-core")
+
 option("examples", { description = "Build examples", default = false })
-set_policy("package.precompiled", false)
+option("profiling", { description = "Build examples", default = false })
+
+if has_config("profiling") then
+    add_requires("tracy")
+end
 
 rule("gen_gl_functions")
     set_extensions(".xml")
@@ -51,6 +56,10 @@ target("opengl32")
     if is_plat("windows") then
         add_syslinks("Gdi32")
         add_defines("NOGDI")
+    end
+    if has_config("profiling") then
+        add_packages("tracy")
+        add_defines("GLGPUS_PROFILING")
     end
     add_defines("GLGPUS_BUILD")
     add_rules("gen_gl_functions")

@@ -8,7 +8,7 @@
 namespace glgpus
 {
 	// From gldrv.h https://learn.microsoft.com/fr-fr/windows-hardware/drivers/download-the-wdk
-	struct GlDispatchTable
+	struct WglDispatchTable
 	{
 		//OpenGl 1.0
 		void(CCT_CALL* glNewList)(GLuint list, GLenum mode);
@@ -354,7 +354,7 @@ namespace glgpus
 	struct GlProcTable
 	{
 		int cEntries;
-		GlDispatchTable glDispatchTable;
+		WglDispatchTable WglDispatchTable;
 	};
 
 	using PFN_SetProcTable = void(CCT_CALL*)(const GlProcTable*);

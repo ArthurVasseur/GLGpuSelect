@@ -14,12 +14,12 @@ namespace glgpus
 		CCT_ASSERT(platformDeviceContext != nullptr, "Invalid device context");
 	}
 
-	void DeviceContext::SetGlDispatchTable(const GlDispatchTable& dispatchTable)
+	void DeviceContext::SetGlDispatchTable(const OpenGlDispatchTable& dispatchTable)
 	{
 		m_dispatchTable = dispatchTable;
 	}
 
-	const GlDispatchTable& DeviceContext::GetGlDispatchTable() const
+	const OpenGlDispatchTable& DeviceContext::GetGlDispatchTable() const
 	{
 		return m_dispatchTable;
 	}

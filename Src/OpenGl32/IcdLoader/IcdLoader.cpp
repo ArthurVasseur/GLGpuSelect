@@ -25,6 +25,8 @@ namespace glgpus
 	{
 		static NTSTATUS QueryAdapterInfo(D3DKMT_HANDLE adapter_h, KMTQUERYADAPTERINFOTYPE info_type, void* info, size_t info_size)
 		{
+			GLGPUS_AUTO_PROFILER_SCOPE();
+
 			D3DKMT_QUERYADAPTERINFO adapterInfo = {
 				.hAdapter = adapter_h,
 				.Type = info_type,
@@ -36,6 +38,8 @@ namespace glgpus
 
 		static cct::Result<std::vector<AdapterInfo>, glgpusResult> EnumerateDevices()
 		{
+			GLGPUS_AUTO_PROFILER_SCOPE();
+
 			std::vector<AdapterInfo> adapters;
 			std::array<D3DKMT_ADAPTERINFO, MAX_ENUM_ADAPTERS> adapterInfos;
 
@@ -44,9 +48,13 @@ namespace glgpus
 			  .pAdapters = adapterInfos.data(),
 			};
 
-			NTSTATUS status = D3DKMTEnumAdapters2(&enumAdapters);
-			if (!NT_SUCCESS(status))
-				return glgpusResult::Unknown;
+			NTSTATUS status = {};
+			{
+				GLGPUS_PROFILER_SCOPE("D3DKMTEnumAdapters2");
+				status = D3DKMTEnumAdapters2(&enumAdapters);
+				if (!NT_SUCCESS(status))
+					return glgpusResult::Unknown;
+			}
 
 			if (enumAdapters.NumAdapters == 0)
 				return glgpusResult::Success;
@@ -58,6 +66,7 @@ namespace glgpus
 						D3DKMT_CLOSEADAPTER close_adapter = {
 						   .hAdapter = adapterInfos[i].hAdapter,
 						};
+						GLGPUS_PROFILER_SCOPE("D3DKMTCloseAdapter");
 						status = D3DKMTCloseAdapter(&close_adapter);
 						CCT_ASSERT(NT_SUCCESS(status), "D3DKMTCloseAdapter failed");
 					}
@@ -120,9 +129,12 @@ namespace glgpus
 						.hAdapter = 0
 					};
 
-					status = D3DKMTOpenAdapterFromLuid(&openAdapter);
-					if (!NT_SUCCESS(status))
-						return glgpusResult::Unknown;
+					{
+						GLGPUS_PROFILER_SCOPE("D3DKMTOpenAdapterFromLuid");
+						status = D3DKMTOpenAdapterFromLuid(&openAdapter);
+						if (!NT_SUCCESS(status))
+							return glgpusResult::Unknown;
+					}
 
 					D3DKMT_CLOSEADAPTER closeAdapter = {
 						.hAdapter = openAdapter.hAdapter,
@@ -130,6 +142,7 @@ namespace glgpus
 
 					cct::DeferredExit __([&]()
 					{
+						GLGPUS_PROFILER_SCOPE("D3DKMTCloseAdapter");
 						status = D3DKMTCloseAdapter(&closeAdapter);
 						CCT_ASSERT(NT_SUCCESS(status), "D3DKMTCloseAdapter failed");
 					});
@@ -143,7 +156,11 @@ namespace glgpus
 						if (!NT_SUCCESS(status))
 							return glgpusResult::Unknown;
 					}
-					auto name = ToUtf8(registry.AdapterString);
+					std::string name;
+					{
+						GLGPUS_PROFILER_SCOPE("ToUtf8");
+						name = ToUtf8(registry.AdapterString);
+					}
 					std::memcpy(&adapterInfo.Name, name.data(), name.size());
 					adapterInfo.Index = i;
 					adapters.emplace_back(adapterInfo);
@@ -154,6 +171,7 @@ namespace glgpus
 
 		static cct::Result<std::string, glgpusResult> ChooseDevice(cct::UInt64 pDeviceUuid)
 		{
+			GLGPUS_AUTO_PROFILER_SCOPE();
 			LUID luid;
 			std::memcpy(&luid, &pDeviceUuid, sizeof(cct::UInt64));
 			D3DKMT_OPENADAPTERFROMLUID openAdapter = {
@@ -199,6 +217,8 @@ namespace glgpus
 
 	cct::UInt32 IcdLoader::EnumerateAdapters(cct::UInt32* pPhysicalDeviceCount, AdapterInfo* pDevices)
 	{
+		GLGPUS_AUTO_PROFILER_SCOPE();
+
 		auto deviceInfoResult =
 #ifdef CCT_PLATFORM_WINDOWS
 		wddm::EnumerateDevices();
@@ -221,6 +241,8 @@ namespace glgpus
 
 	cct::UInt32 IcdLoader::ChooseDevice(cct::UInt64 pDeviceUuid)
 	{
+		GLGPUS_AUTO_PROFILER_SCOPE();
+
 #ifdef CCT_PLATFORM_WINDOWS
 		auto icdPathResult = wddm::ChooseDevice(pDeviceUuid);
 #else

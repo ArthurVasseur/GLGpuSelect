@@ -9,6 +9,14 @@
 #include <Concerto/Core/DeferredExit.hpp>
 #include "OpenGl32/GLGpuSelect.h"
 
+#ifdef GLGPUS_PROFILING
+#include <tracy/Tracy.hpp>
+#include <source_location>
+#define GLGPUS_PROFILER_SCOPE(name) ZoneScopedN(name)
+#define GLGPUS_AUTO_PROFILER_SCOPE() ZoneScoped
+#else
+#define GLGPUS_PRoFILER_SCOPE(name)
+#endif
 
 #define GLGPUS_FROM_HANDLE(type, name, handle)	\
 	type* name = type::FromHandle(handle)
@@ -47,6 +55,16 @@ using GLubyte = cct::UByte;
 using GLshort = cct::Int16;
 using GLushort = cct::UInt16;
 using GLboolean = cct::UInt8;
+using GLfixed = cct::Int32;
+using GLchar = cct::Byte;
+using GLintptr = ptrdiff_t;
+using GLsizeiptr = ptrdiff_t;
+using GLuint64 = cct::UInt64;
+using GLsync = struct __GLsync*;
+using GLDEBUGPROCAMD = void (CCT_CALL*)(GLuint id, GLenum category, GLenum severity, GLsizei length, const GLchar* message, void* userParam);
+using GLDEBUGPROC = void (CCT_CALL*)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
+using GLint64 = cct::Int64;
+using GLclampx = cct::Int32;
 
 namespace glgpus
 {
@@ -79,12 +97,6 @@ namespace glgpus
 
 	inline std::string ToUtf8(const wchar_t* wstr)
 	{
-		char* oldLocale = std::setlocale(LC_CTYPE, "en_US.utf8");
-		cct::DeferredExit _([&]()
-		{
-			std::setlocale(LC_CTYPE, oldLocale);
-		});
-
 		std::mbstate_t state = {};
 		std::size_t len = std::wcsrtombs(nullptr, &wstr, 0, &state);
 		if (len == std::numeric_limits<std::size_t>::max())
