@@ -68,7 +68,7 @@ namespace glgpus
 						};
 						GLGPUS_PROFILER_SCOPE("D3DKMTCloseAdapter");
 						status = D3DKMTCloseAdapter(&close_adapter);
-						CCT_ASSERT(NT_SUCCESS(status), "D3DKMTCloseAdapter failed");
+						GLGPUS_ASSERT(NT_SUCCESS(status), "D3DKMTCloseAdapter failed");
 					}
 				});
 
@@ -93,11 +93,11 @@ namespace glgpus
 					if (queryIds.DeviceIds.VendorID == static_cast<std::underlying_type_t<VendorId>>(VendorId::Microsoft))
 						continue;
 
-					CCT_ASSERT(queryIds.DeviceIds.DeviceID <= std::numeric_limits<cct::UInt16>::max(), "Invalid size");
-					CCT_ASSERT(queryIds.DeviceIds.VendorID <= std::numeric_limits<cct::UInt16>::max(), "Invalid size");
-					CCT_ASSERT(queryIds.DeviceIds.SubVendorID <= std::numeric_limits<cct::UInt16>::max(), "Invalid size");
-					CCT_ASSERT(queryIds.DeviceIds.SubSystemID <= std::numeric_limits<cct::UInt16>::max(), "Invalid size");
-					CCT_ASSERT(queryIds.DeviceIds.RevisionID <= std::numeric_limits<cct::UInt8>::max(), "Invalid size");
+					GLGPUS_ASSERT(queryIds.DeviceIds.DeviceID <= std::numeric_limits<cct::UInt16>::max(), "Invalid size");
+					GLGPUS_ASSERT(queryIds.DeviceIds.VendorID <= std::numeric_limits<cct::UInt16>::max(), "Invalid size");
+					GLGPUS_ASSERT(queryIds.DeviceIds.SubVendorID <= std::numeric_limits<cct::UInt16>::max(), "Invalid size");
+					GLGPUS_ASSERT(queryIds.DeviceIds.SubSystemID <= std::numeric_limits<cct::UInt16>::max(), "Invalid size");
+					GLGPUS_ASSERT(queryIds.DeviceIds.RevisionID <= std::numeric_limits<cct::UInt8>::max(), "Invalid size");
 
 					D3DKMT_ADAPTERADDRESS address = {};
 					status = QueryAdapterInfo(adapterInfos[i].hAdapter, KMTQAITYPE_ADAPTERADDRESS, &address, sizeof(address));
@@ -106,9 +106,9 @@ namespace glgpus
 						return glgpusResult::Unknown;
 					}
 
-					CCT_ASSERT(address.BusNumber <= std::numeric_limits<cct::UInt8>::max(), "Invalid size");
-					CCT_ASSERT(address.DeviceNumber <= std::numeric_limits<cct::UInt8>::max(), "Invalid size");
-					CCT_ASSERT(address.FunctionNumber <= std::numeric_limits<cct::UInt8>::max(), "Invalid size");
+					GLGPUS_ASSERT(address.BusNumber <= std::numeric_limits<cct::UInt8>::max(), "Invalid size");
+					GLGPUS_ASSERT(address.DeviceNumber <= std::numeric_limits<cct::UInt8>::max(), "Invalid size");
+					GLGPUS_ASSERT(address.FunctionNumber <= std::numeric_limits<cct::UInt8>::max(), "Invalid size");
 
 
 					D3DKMT_OPENGLINFO oglInfo = {};
@@ -141,11 +141,11 @@ namespace glgpus
 					};
 
 					cct::DeferredExit __([&]()
-					{
-						GLGPUS_PROFILER_SCOPE("D3DKMTCloseAdapter");
-						status = D3DKMTCloseAdapter(&closeAdapter);
-						CCT_ASSERT(NT_SUCCESS(status), "D3DKMTCloseAdapter failed");
-					});
+						{
+							GLGPUS_PROFILER_SCOPE("D3DKMTCloseAdapter");
+							status = D3DKMTCloseAdapter(&closeAdapter);
+							GLGPUS_ASSERT(NT_SUCCESS(status), "D3DKMTCloseAdapter failed");
+						});
 					D3DKMT_ADAPTERREGISTRYINFO registry = {};
 					status = QueryAdapterInfo(openAdapter.hAdapter, KMTQAITYPE_ADAPTERREGISTRYINFO_RENDER, &registry, sizeof(registry));
 					if (!NT_SUCCESS(status))
@@ -221,9 +221,9 @@ namespace glgpus
 
 		auto deviceInfoResult =
 #ifdef CCT_PLATFORM_WINDOWS
-		wddm::EnumerateDevices();
+			wddm::EnumerateDevices();
 #else
-		std::vector<AdapterInfo>();
+			std::vector<AdapterInfo>();
 #endif
 
 		if (deviceInfoResult.IsError())
@@ -246,7 +246,7 @@ namespace glgpus
 #ifdef CCT_PLATFORM_WINDOWS
 		auto icdPathResult = wddm::ChooseDevice(pDeviceUuid);
 #else
-			std::vector<AdapterInfo>();
+		std::vector<AdapterInfo>();
 #endif
 		if (icdPathResult.IsError())
 			return MakeResult(icdPathResult.GetError(), "Failed to choose device");
@@ -268,14 +268,14 @@ namespace glgpus
 		if (adapterInfo == nullptr)
 			return MakeResult(glgpusResult::InvalidArg, "Invalid UUID");
 
-		cct::Logger::Info("Using {}\nICD path: '{}'", adapterInfo->Name, icdPathResult.GetValue());
+		GLGPUS_LOG_INFO("Using {}\nICD path: '{}'", adapterInfo->Name, icdPathResult.GetValue());
 
 		return 0;
 	}
 
 	IcdLibrary& IcdLoader::GetIcd() const
 	{
-		CCT_ASSERT(m_icdLibrary != nullptr, "ICD library is not loaded");
+		GLGPUS_ASSERT(m_icdLibrary != nullptr, "ICD library is not loaded");
 		return *m_icdLibrary;
 	}
 
@@ -346,7 +346,7 @@ cct::UInt32 glgpusEnumerateDevices(cct::UInt32* pPhysicalDeviceCount, AdapterInf
 	auto* instance = glgpus::IcdLoader::Instance();
 	if (!instance)
 	{
-		CCT_ASSERT_FALSE("glgpus::IcdLoader::Instance() returned nullptr");
+		GLGPUS_ASSERT_FALSE("glgpus::IcdLoader::Instance() returned nullptr");
 		return glgpus::MakeResult(glgpus::glgpusResult::OutOfHostMemory);
 	}
 
@@ -358,7 +358,7 @@ cct::UInt32 glgpusChooseDevice(cct::UInt64 pDeviceUuid)
 	auto* instance = glgpus::IcdLoader::Instance();
 	if (!instance)
 	{
-		CCT_ASSERT_FALSE("glgpus::IcdLoader::Instance() returned nullptr");
+		GLGPUS_ASSERT_FALSE("glgpus::IcdLoader::Instance() returned nullptr");
 		return glgpus::MakeResult(glgpus::glgpusResult::OutOfHostMemory);
 	}
 

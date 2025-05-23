@@ -10,33 +10,38 @@
 #include "OpenGl32/GLGpuSelect.h"
 
 #ifdef GLGPUS_PROFILING
-#include <tracy/Tracy.hpp>
-#include <source_location>
-#define GLGPUS_PROFILER_SCOPE(name) ZoneScopedN(name)
-#define GLGPUS_AUTO_PROFILER_SCOPE() ZoneScoped
+	#include <tracy/Tracy.hpp>
+	#include <source_location>
+	#define GLGPUS_PROFILER_SCOPE(name) ZoneScopedN(name)
+	#define GLGPUS_AUTO_PROFILER_SCOPE() ZoneScoped
 #else
-#define GLGPUS_PRoFILER_SCOPE(name)
+	#define GLGPUS_PRoFILER_SCOPE(name)
 #endif
 
-#define GLGPUS_FROM_HANDLE(type, name, handle)	\
-	type* name = type::FromHandle(handle)
+#ifdef GLGPUS_ASSERTS
+	#define GLGPUS_ASSERT(expression, fmt, ...) CCT_ASSERT(expression, fmt, __VA_ARGS__)
+	#define GLGPUS_ASSERT_FALSE(fmt, ...) CCT_ASSERT_FALSE(fmt, __VA_ARGS__)
+#else
+	#define GLGPUS_ASSERT(expression, fmt, ...)
+	#define GLGPUS_ASSERT_FALSE(fmt, ...)
+#endif
 
-#define GLGPUS_TO_HANDLE(type, handle)	\
-	(type)(handle)
-
-#define GLGPUS_DISPATCHABLE_HANDLE(type)															\
-		static inline type* FromHandle(Vk##type instance)										\
-		{																						\
-			auto* dispatchable = reinterpret_cast<DispatchableObject<type>*>(instance);			\
-			if (!dispatchable)																	\
-				return nullptr;																	\
-			if (dispatchable->Object.GetObjectType() != type::ObjectType)						\
-			{																					\
-				CCT_ASSERT_FALSE("Invalid Object Type for: " #type);							\
-				return nullptr;																	\
-			}																					\
-			return &dispatchable->Object;														\
-		}
+#ifdef GLGPUS_LOGGING
+	#include <Concerto/Core/Logger.hpp>
+	#define GLGPUS_LOG_ERROR(fmt, ...) cct::Logger::Error(fmt, __VA_ARGS__)
+	#define GLGPUS_LOG_WARN(fmt, ...) cct::Logger::Warning(fmt, __VA_ARGS__)
+	#define GLGPUS_LOG_INFO(fmt, ...) cct::Logger::Info(fmt, __VA_ARGS__)
+#ifdef CCT_DEBUG
+	#define GLGPUS_LOG_DEBUG(fmt, ...) cct::Logger::Debug(fmt, __VA_ARGS__)
+#else
+	#define GLGPUS_LOG_DEBUG(fmt, ...) 
+#endif
+#else
+	#define GLGPUS_LOG_ERROR(fmt, ...)
+	#define GLGPUS_LOG_WARN(fmt, ...)
+	#define GLGPUS_LOG_INFO(fmt, ...)
+	#define GLGPUS_LOG_DEBUG(fmt, ...) 
+#endif 
 
 #define GLGPUS_LOG_CONTEXT_MANIPULATION
 

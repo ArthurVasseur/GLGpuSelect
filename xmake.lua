@@ -3,7 +3,10 @@ add_repositories("Concerto-xrepo https://github.com/ConcertoEngine/xmake-repo.gi
 add_requires("concerto-core")
 
 option("examples", { description = "Build examples", default = false })
-option("profiling", { description = "Build examples", default = false })
+option("profiling", { description = "Build with tracy profiler", default = false })
+option("tests", { description = "Build tests", default = false })
+option("asserts", { description = "Enable asserts", default = false })
+option("logging", { description = "Enable logging", default = false })
 
 if has_config("profiling") then
     add_requires("tracy")
@@ -61,6 +64,12 @@ target("opengl32")
         add_packages("tracy")
         add_defines("GLGPUS_PROFILING")
     end
+    if has_config("asserts") then
+        add_defines("GLGPUS_ASSERTS")
+    end
+    if has_config("logging") then
+        add_defines("GLGPUS_LOGGING")
+    end
     add_defines("GLGPUS_BUILD")
     add_rules("gen_gl_functions")
 target_end()
@@ -85,5 +94,52 @@ if has_config("examples") then
         add_files("Src/CApiExample/**.c")
         add_packages("concerto-core", "libsdl3")
         add_deps("opengl32")
+    target_end()
+end
+
+-- if has_config("conformance") then
+--     includes("Xmake/Conformance/**.lua")
+--     add_requires("vk-gl-cts")
+   
+--     target("conformance-tests")
+--         set_kind("phony")
+--         add_packages("vk-gl-cts")
+
+--         before_run(function(target)
+--             import("core.project.project")
+--             import("lib.detect.find_tool")
+
+--             local vk_gl_cts = project.required_package("vk-gl-cts")
+--             if not vk_gl_cts then
+--                 raise("required package 'vk-gl-cts' not found!")
+--             end
+
+--             local glcts = path.join(vk_gl_cts:installdir(), "bin/glcts.exe")
+
+--             os.cp(glcts, target:targetdir())
+--         end)
+
+--         on_run(function(target)
+--             local glcts = path.join(target:targetdir(), "glcts.exe")
+
+--             os.vrunv(glcts, {"--deqp-gl-context-type=wgl"})
+--         end)
+
+--     task_end()
+-- end
+
+
+if has_config("tests") then
+    add_requires("catch2")
+
+    target("opengl32-tests")
+        set_languages("cxx20")
+        set_kind("binary")
+        add_files("Src/Tests/*.cpp")
+        add_packages("catch2")
+        add_deps("opengl32")
+        if is_plat("windows") then
+            add_syslinks("Gdi32", "User32")
+        end
     target_end()
 end

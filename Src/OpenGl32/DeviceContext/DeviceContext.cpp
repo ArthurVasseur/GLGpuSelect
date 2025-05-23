@@ -11,7 +11,7 @@ namespace glgpus
 		m_platformDeviceContext(platformDeviceContext),
 		m_currentValue(nullptr)
 	{
-		CCT_ASSERT(platformDeviceContext != nullptr, "Invalid device context");
+		GLGPUS_ASSERT(platformDeviceContext != nullptr, "Invalid device context");
 	}
 
 	void DeviceContext::SetGlDispatchTable(const OpenGlDispatchTable& dispatchTable)

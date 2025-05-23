@@ -44,28 +44,28 @@ namespace
 		auto* glgpusInstance = glgpus::IcdLoader::Instance();
 		if (glgpusInstance == nullptr)
 		{
-			CCT_ASSERT_FALSE("glgpusInstance is null");
+			GLGPUS_ASSERT_FALSE("glgpusInstance is null");
 			return nullptr;
 		}
 
 		auto* currentDevice = glgpusInstance->GetCurrentDeviceContextForCurrentThread();
 		if (!currentDevice)
 		{
-			CCT_ASSERT_FALSE("No current device context found for current thread");
+			GLGPUS_ASSERT_FALSE("No current device context found for current thread");
 			SetLastError(ERROR_INVALID_HANDLE);
 			return nullptr;
 		}
 
 		if (currentDevice->DeviceContext->IsActiveOnCurrentThread() == false)
 		{
-			CCT_ASSERT_FALSE("wglSwapBuffers called on a non-active context");
+			GLGPUS_ASSERT_FALSE("wglSwapBuffers called on a non-active context");
 			SetLastError(ERROR_INVALID_HANDLE_STATE);
 			return nullptr;
 		}
 
 		if (currentDevice->DeviceContext->GetPlatformDeviceContext() != hdc)
 		{
-			CCT_ASSERT_FALSE("wglSwapBuffers called on a different device context than the one it was created with");
+			GLGPUS_ASSERT_FALSE("wglSwapBuffers called on a different device context than the one it was created with");
 			SetLastError(ERROR_INVALID_HANDLE_STATE);
 			return nullptr;
 		}
@@ -102,7 +102,7 @@ int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 	auto* glgpusInstance = glgpus::IcdLoader::Instance();
 	if (glgpusInstance == nullptr)
 	{
-		CCT_ASSERT_FALSE("glgpusInstance is null");
+		GLGPUS_ASSERT_FALSE("glgpusInstance is null");
 		return -1;
 	}
 
@@ -112,7 +112,7 @@ int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 		const auto& adapters = glgpusInstance->GetAdapterInfos();
 		if (adapters.empty())
 		{
-			CCT_ASSERT_FALSE("No adapters found");
+			GLGPUS_ASSERT_FALSE("No adapters found");
 			return -1;
 		}
 
@@ -124,7 +124,7 @@ int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 		auto& selectedAdapter = adapters[adapterIndex];
 		if (glgpusInstance->ChooseDevice(selectedAdapter.Uuid) != 0)
 		{
-			CCT_ASSERT_FALSE("Failed to choose device");
+			GLGPUS_ASSERT_FALSE("Failed to choose device");
 			return -1;
 		}
 
@@ -196,7 +196,7 @@ HGLRC wglCreateContext(HDC hdc)
 
 	if (icdDeviceContext == nullptr)
 	{
-		CCT_ASSERT_FALSE("DrvCreateContext returned a null context");
+		GLGPUS_ASSERT_FALSE("DrvCreateContext returned a null context");
 		return nullptr;
 	}
 
@@ -205,7 +205,7 @@ HGLRC wglCreateContext(HDC hdc)
 	icdDeviceContextWrapper->IcdDeviceContext = icdDeviceContext;
 
 #ifdef GLGPUS_LOG_CONTEXT_MANIPULATION
-	cct::Logger::Warning("wglCreateContext(hdc {}) -> HGLRC: {}", static_cast<void*>(hdc), static_cast<void*>(icdDeviceContext));
+	GLGPUS_LOG_WARN("wglCreateContext(hdc {}) -> HGLRC: {}", static_cast<void*>(hdc), static_cast<void*>(icdDeviceContext));
 #endif
 
 	return reinterpret_cast<HGLRC>(icdDeviceContextWrapper);
@@ -219,7 +219,7 @@ HGLRC wglCreateLayerContext(HDC hdc, int layerPlane)
 
 	if (icdDeviceContext == nullptr)
 	{
-		CCT_ASSERT_FALSE("DrvCreateLayerContext returned a null context");
+		GLGPUS_ASSERT_FALSE("DrvCreateLayerContext returned a null context");
 		return nullptr;
 	}
 
@@ -229,7 +229,7 @@ HGLRC wglCreateLayerContext(HDC hdc, int layerPlane)
 
 
 #ifdef GLGPUS_LOG_CONTEXT_MANIPULATION
-	cct::Logger::Warning("wglCreateLayerContext(hdc {}, layerPlane {}) -> HGLRC: {}", static_cast<void*>(hdc), layerPlane, static_cast<void*>(icdDeviceContext));
+	GLGPUS_LOG_WARN("wglCreateLayerContext(hdc {}, layerPlane {}) -> HGLRC: {}", static_cast<void*>(hdc), layerPlane, static_cast<void*>(icdDeviceContext));
 #endif
 
 	return reinterpret_cast<HGLRC>(icdDeviceContextWrapper);
@@ -241,7 +241,7 @@ BOOL wglDeleteContext(HGLRC hglrc)
 
 	if (hglrc == nullptr)
 	{
-		CCT_ASSERT_FALSE("Null context passed to wglDeleteContext");
+		GLGPUS_ASSERT_FALSE("Null context passed to wglDeleteContext");
 		SetLastError(ERROR_INVALID_HANDLE);
 		return false;
 	}
@@ -249,21 +249,21 @@ BOOL wglDeleteContext(HGLRC hglrc)
 	auto* icdDeviceContextWrapper = reinterpret_cast<glgpus::IcdDeviceContextWrapper*>(hglrc);
 	if (icdDeviceContextWrapper == nullptr)
 	{
-		CCT_ASSERT_FALSE("Invalid HGLRC handle passed to wglDeleteContext");
+		GLGPUS_ASSERT_FALSE("Invalid HGLRC handle passed to wglDeleteContext");
 		SetLastError(ERROR_INVALID_HANDLE);
 		return false;
 	}
 
 	if (icdDeviceContextWrapper->DeviceContext->IsActive())
 	{
-		cct::Logger::Warning("Attempted to delete an active HGLRC; automatically unbinding the context. "
-			"Please ensure you call wglMakeCurrent(NULL, NULL) before deleting the context in your code.");
+		GLGPUS_LOG_WARN("Attempted to delete an active HGLRC ({}); automatically unbinding the context. "
+						"Please ensure you call wglMakeCurrent(NULL, NULL) before deleting the context in your code.", reinterpret_cast<void*>(hglrc));
 		if (!wglMakeCurrent(nullptr, nullptr))
 			return false;
 	}
 
 #ifdef GLGPUS_LOG_CONTEXT_MANIPULATION
-	cct::Logger::Warning("wglDeleteContext(hglrc {}) associated hdc: {}", icdDeviceContextWrapper->IcdDeviceContext, icdDeviceContextWrapper->DeviceContext->GetPlatformDeviceContext());
+	GLGPUS_LOG_WARN("wglDeleteContext(hglrc {}) associated hdc: {}", icdDeviceContextWrapper->IcdDeviceContext, icdDeviceContextWrapper->DeviceContext->GetPlatformDeviceContext());
 #endif
 
 	bool result = GetWglIcdLibrary().DrvDeleteContext(static_cast<HGLRC>(icdDeviceContextWrapper->IcdDeviceContext));
@@ -287,12 +287,12 @@ BOOL wglMakeCurrent(HDC hdc, HGLRC hglrc)
 	auto* glgpuInstance = glgpus::IcdLoader::Instance();
 	if (glgpuInstance == nullptr)
 	{
-		CCT_ASSERT_FALSE("glgpusInstance is null");
+		GLGPUS_ASSERT_FALSE("glgpusInstance is null");
 		return false;
 	}
 
 #ifdef GLGPUS_LOG_CONTEXT_MANIPULATION
-	cct::Logger::Warning("wglMakeCurrent(hdc {}, hglrc: {})", static_cast<void*>(hdc), icdDeviceContextWrapper ? icdDeviceContextWrapper->IcdDeviceContext : nullptr);
+	GLGPUS_LOG_WARN("wglMakeCurrent(hdc {}, hglrc: {})", static_cast<void*>(hdc), icdDeviceContextWrapper ? icdDeviceContextWrapper->IcdDeviceContext : nullptr);
 #endif
 
 	if (icdDeviceContextWrapper == nullptr)
@@ -308,7 +308,7 @@ BOOL wglMakeCurrent(HDC hdc, HGLRC hglrc)
 
 	if (icdDeviceContextWrapper->DeviceContext->IsActive())
 	{
-		CCT_ASSERT_FALSE("wglMakeCurrent called on an already active context");
+		GLGPUS_ASSERT_FALSE("wglMakeCurrent called on an already active context");
 		return false;
 	}
 
@@ -317,7 +317,7 @@ BOOL wglMakeCurrent(HDC hdc, HGLRC hglrc)
 
 	if (!dispatchTable)
 	{
-		CCT_ASSERT_FALSE("DrvSetContext failed");
+		GLGPUS_ASSERT_FALSE("DrvSetContext failed");
 		return false;
 	}
 
@@ -360,7 +360,7 @@ BOOL wglShareLists(HGLRC hglrc1, HGLRC hglrc2)
 
 	if (icdDeviceContextWrapper1 == nullptr || icdDeviceContextWrapper2 == nullptr)
 	{
-		CCT_ASSERT_FALSE("Invalid HGLRC handle passed to wglShareLists");
+		GLGPUS_ASSERT_FALSE("Invalid HGLRC handle passed to wglShareLists");
 		SetLastError(ERROR_INVALID_HANDLE);
 		return false;
 	}
@@ -443,7 +443,7 @@ BOOL wglUseFontBitmaps(HDC hdc, DWORD first, DWORD count, DWORD listBase)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
-	CCT_ASSERT_FALSE("Not implemented");
+	GLGPUS_ASSERT_FALSE("Not implemented");
 	return false;
 }
 
@@ -451,7 +451,7 @@ BOOL wglUseFontOutlines(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
-	CCT_ASSERT_FALSE("Not implemented");
+	GLGPUS_ASSERT_FALSE("Not implemented");
 	return false;
 }
 
