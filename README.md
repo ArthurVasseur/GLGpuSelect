@@ -121,14 +121,6 @@ int main(void)
 
 ---
 
-## 📚 Examples & Documentation
-
-* Demos: see `examples/` folder
-* Full docs & tutorials: [https://arthurvasseur.github.io/GLGpuSelect](https://arthurvasseur.github.io/GLGpuSelect)
-* FAQ & troubleshooting: see `docs/FAQ.md`
-
----
-
 ## 🤝 Contributing
 
 We welcome contributions!
@@ -140,13 +132,6 @@ We welcome contributions!
 5. Open a Pull Request
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on code style, testing, and reviews.
-
----
-
-## 📝 Releases & Changelog
-
-* Stay up‑to‑date: new features, fixes, and enhancements are tagged as `vX.Y.Z` in GitHub Releases.
-* See [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
