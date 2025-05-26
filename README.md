@@ -11,11 +11,9 @@ GLGpuSelect is a **drop‑in replacement** for `opengl32.dll` (Windows) and — 
 <div align="center">
 ✨ Key Benefits: ✨
 
-* **gpu-selection**: Per-application GPU choice without system‑wide settings
-* **zero-code-changes**: Seamless library swap, no app code edits
+* **gpu-selection**: Per-application GPU choice without system‑wide settings, control via environment variables or C-API
 * **hardware-acceleration**: Full performance on your chosen GPU
 * **cross-platform**: Windows today, Linux support soon
-* **gpu-affinity**: Control via environment variables or C-API
 
 </div>
 
