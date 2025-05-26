@@ -15,7 +15,8 @@
 	#define GLGPUS_PROFILER_SCOPE(name) ZoneScopedN(name)
 	#define GLGPUS_AUTO_PROFILER_SCOPE() ZoneScoped
 #else
-	#define GLGPUS_PRoFILER_SCOPE(name)
+	#define GLGPUS_PROFILER_SCOPE(name)
+	#define GLGPUS_AUTO_PROFILER_SCOPE()
 #endif
 
 #ifdef GLGPUS_ASSERTS

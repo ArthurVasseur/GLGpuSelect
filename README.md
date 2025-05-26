@@ -62,6 +62,12 @@ xmake config -m debug --examples=y --profiling=y --tests=y --asserts=y --logging
 
 ### Build & Install
 
+#### Using CMake
+
+To integrate this project into a CMake-based workflow, refer to [xrepo-cmake](https://github.com/xmake-io/xrepo-cmake)
+
+#### Using Xmake
+
 ```bash
 xmake         # compile
 xmake install -o /usr/local   # or your chosen path
