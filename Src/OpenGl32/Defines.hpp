@@ -10,6 +10,7 @@
 #include "OpenGl32/GLGpuSelect.h"
 
 #ifdef GLGPUS_PROFILING
+	#define TRACY_ENABLE
 	#include <tracy/Tracy.hpp>
 	#include <source_location>
 	#define GLGPUS_PROFILER_SCOPE(name) ZoneScopedN(name)
