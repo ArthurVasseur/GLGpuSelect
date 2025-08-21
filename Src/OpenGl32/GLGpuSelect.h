@@ -11,6 +11,11 @@
 #include <Concerto/Core/Types.h>
 #endif
 
+#if defined(CCT_PLATFORM_WINDOWS) && defined(CCT_ARCH_X86) // FIXME
+#undef CCT_CALL
+#define CCT_CALL __cdecl
+#endif
+
 #ifdef GLGPUS_BUILD
 #define GLGPUS_API CCT_EXPORT
 #else
