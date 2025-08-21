@@ -47,6 +47,11 @@
 
 #define GLGPUS_LOG_CONTEXT_MANIPULATION
 
+#if defined(CCT_PLATFORM_WINDOWS) && defined(CCT_ARCH_X86)
+#undef CCT_CALL
+#define CCT_CALL __cdecl
+#endif
+
 using GLenum = cct::Int32;
 using GLfloat = cct::Float32;
 using GLclampf = cct::Float32;
