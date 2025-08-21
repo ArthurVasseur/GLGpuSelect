@@ -97,38 +97,6 @@ if has_config("examples") then
     target_end()
 end
 
--- if has_config("conformance") then
---     includes("Xmake/Conformance/**.lua")
---     add_requires("vk-gl-cts")
-   
---     target("conformance-tests")
---         set_kind("phony")
---         add_packages("vk-gl-cts")
-
---         before_run(function(target)
---             import("core.project.project")
---             import("lib.detect.find_tool")
-
---             local vk_gl_cts = project.required_package("vk-gl-cts")
---             if not vk_gl_cts then
---                 raise("required package 'vk-gl-cts' not found!")
---             end
-
---             local glcts = path.join(vk_gl_cts:installdir(), "bin/glcts.exe")
-
---             os.cp(glcts, target:targetdir())
---         end)
-
---         on_run(function(target)
---             local glcts = path.join(target:targetdir(), "glcts.exe")
-
---             os.vrunv(glcts, {"--deqp-gl-context-type=wgl"})
---         end)
-
---     task_end()
--- end
-
-
 if has_config("tests") then
     add_requires("catch2")
 
