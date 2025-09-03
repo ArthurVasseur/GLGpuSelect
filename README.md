@@ -8,15 +8,6 @@
 
 GLGpuSelect is a **drop‑in replacement** for `opengl32.dll` (Windows) and — coming soon — `libGL.so` (Linux), enabling **per‑application GPU routing** for any OpenGL app. No modifications, no global OS tweaks: just swap in the shim and pick your integrated or discrete GPU.
 
-<div align="center">
-✨ Key Benefits: ✨
-
-* **gpu-selection**: Per-application GPU choice without system‑wide settings, control via environment variables or C-API
-* **hardware-acceleration**: Full performance on your chosen GPU
-* **cross-platform**: Windows today, Linux support soon
-
-</div>
-
 ---
 
 ## 📋 Table of Contents
