@@ -447,7 +447,23 @@ BOOL wglUseFontBitmaps(HDC hdc, DWORD first, DWORD count, DWORD listBase)
 	return false;
 }
 
+BOOL wglUseFontBitmapsW(HDC hdc, DWORD first, DWORD count, DWORD listBase)
+{
+	GLGPUS_AUTO_PROFILER_SCOPE();
+	GLGPUS_ASSERT_FALSE("Not implemented");
+
+	return false;
+}
+
 BOOL wglUseFontOutlines(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, void* lpgmf)
+{
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
+	GLGPUS_ASSERT_FALSE("Not implemented");
+	return false;
+}
+
+BOOL wglUseFontOutlinesW(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, void* lpgmf)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 

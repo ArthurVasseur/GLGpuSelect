@@ -80,6 +80,8 @@ extern "C" GLGPUS_API BOOL CCT_CALL wglSwapBuffers(HDC hdc);
 extern "C" GLGPUS_API BOOL CCT_CALL wglSwapLayerBuffers(HDC hdc, UINT fuPlanes);
 extern "C" GLGPUS_API void* CCT_CALL wglGetProcAddress(LPCSTR lpszProc);
 extern "C" GLGPUS_API BOOL CCT_CALL wglUseFontBitmaps(HDC hdc, DWORD first, DWORD count, DWORD listBase);
+extern "C" GLGPUS_API BOOL CCT_CALL wglUseFontBitmapsW(HDC hdc, DWORD first, DWORD count, DWORD listBase);
 extern "C" GLGPUS_API BOOL CCT_CALL wglUseFontOutlines(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, void* lpgmf);
+extern "C" GLGPUS_API BOOL CCT_CALL wglUseFontOutlinesW(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, void* lpgmf);
 
 #endif // CCT_PLATFORM_WINDOWS
