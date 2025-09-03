@@ -184,9 +184,13 @@ def main():
             continue
         if name.text not in cmds:
             continue
-        return_type_ptype = proto.find('ptype')
-        ret_type = (proto.text.split()[0] + " " + return_type_ptype.text + return_type_ptype.tail if return_type_ptype is not None else proto.text.split()[0]) if proto.text else return_type_ptype.text
-        
+
+        ptype = proto.find('ptype')
+        const = proto.text if proto.text else ""
+        ptr = (ptype.tail if ptype.tail else "") if ptype is not None else ""
+
+        ret_type = (const + (ptype.text if ptype is not None else "") + ptr).strip()
+
         func_param_name = []
         func_param_type = []
         
