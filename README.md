@@ -1,5 +1,4 @@
-![Build Status](https://img.shields.io/github/actions/workflow/status/ArthurVasseur/GLGpuSelect/ci.yml)
-![Coverage](https://img.shields.io/codecov/c/gh/ArthurVasseur/GLGpuSelect)
+![Build Status](https://img.shields.io/github/actions/workflow/status/ArthurVasseur/GLGpuSelect/windows.yml)
 ![License](https://img.shields.io/badge/License-GPLv3-blue)
 
 # 🚀 GLGpuSelect
