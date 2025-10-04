@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <Concerto/Core/DynLib.hpp>
+#include <Concerto/Core/DynLib/DynLib.hpp>
 
 namespace glgpus
 {
@@ -16,6 +16,11 @@ namespace glgpus
 
 		virtual bool Load(std::string_view icdPath) = 0;
 		bool IsLoaded() const;
+
+		cct::DynLib& GetIcd()
+		{
+			return m_icd;
+		}
 	protected:
 		cct::DynLib m_icd;
 	};

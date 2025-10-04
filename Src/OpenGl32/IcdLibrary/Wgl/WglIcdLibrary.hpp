@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <Concerto/Core/DynLib.hpp>
+#include <Concerto/Core/DynLib/DynLib.hpp>
 
 #include "OpenGl32/WglDispatchTable.hpp"
 #include "OpenGl32/IcdLoader/IcdLoader.hpp"

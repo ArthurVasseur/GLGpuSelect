@@ -6,7 +6,7 @@
 
 #include <mutex>
 #include <vector>
-#include <Concerto/Core/DynLib.hpp>
+#include <Concerto/Core/DynLib/DynLib.hpp>
 
 #include "OpenGl32/Defines.hpp"
 #include "OpenGl32/GLGpuSelect.h"

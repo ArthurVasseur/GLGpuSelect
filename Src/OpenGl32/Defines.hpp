@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <Concerto/Core/Types.hpp>
+#include <Concerto/Core/Types/Types.hpp>
 #include <Concerto/Core/Assert.hpp>
-#include <Concerto/Core/DeferredExit.hpp>
+#include <Concerto/Core/DeferredExit/DeferredExit.hpp>
 #include "OpenGl32/GLGpuSelect.h"
 
 #ifdef GLGPUS_PROFILING

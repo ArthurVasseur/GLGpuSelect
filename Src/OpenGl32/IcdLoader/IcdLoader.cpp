@@ -4,7 +4,7 @@
 
 #include <vector>
 #include <array>
-#include <Concerto/Core/Result.hpp>
+#include <Concerto/Core/Result/Result.hpp>
 
 #include "OpenGl32/IcdLoader/IcdLoader.hpp"
 

@@ -4,8 +4,8 @@
 
 #include <array>
 #include <Concerto/Core/Assert.hpp>
-#include <Concerto/Core/Types.hpp>
-#include <Concerto/Core/Error.hpp>
+#include <Concerto/Core/Types/Types.hpp>
+#include <Concerto/Core/Error/Error.hpp>
 
 #include "OpenGl32/IcdLoader/Wgl.hpp"
 #include "OpenGl32/DeviceContext/DeviceContext.hpp"
@@ -164,6 +164,9 @@ int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 
 	glgpus::IcdLoader::Instance()->SetSelectedPixelFormatIndex(bestIndex);
 
+	
+	auto res = GetWglIcdLibrary().DrvGetProcAddress("wglResourceAttachAMD");
+	auto func = reinterpret_cast<bool(*)(cct::Int64, cct::Int64, cct::Int64)>(res)(0, 0, 0);
 	return bestIndex;
 }
 

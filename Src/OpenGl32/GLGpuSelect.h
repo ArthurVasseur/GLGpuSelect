@@ -5,16 +5,7 @@
 #ifndef OPENGL32_GLGPUSELECT_H
 #define OPENGL32_GLGPUSELECT_H
 
-#ifdef __cplusplus
-#include <Concerto/Core/Types.hpp>
-#else
-#include <Concerto/Core/Types.h>
-#endif
-
-#if defined(CCT_PLATFORM_WINDOWS) && defined(CCT_ARCH_X86) // FIXME
-#undef CCT_CALL
-#define CCT_CALL __cdecl
-#endif
+#include <Concerto/Core/Defines.hpp>
 
 #ifdef GLGPUS_BUILD
 #define GLGPUS_API CCT_EXPORT

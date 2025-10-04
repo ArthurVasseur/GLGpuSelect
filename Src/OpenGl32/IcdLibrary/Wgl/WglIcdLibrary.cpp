@@ -2,8 +2,6 @@
 // Created by arthur on 18/05/2025.
 //
 
-#pragma once
-
 #include "OpenGl32/IcdLibrary/Wgl/WglIcdLibrary.hpp"
 
 namespace glgpus
