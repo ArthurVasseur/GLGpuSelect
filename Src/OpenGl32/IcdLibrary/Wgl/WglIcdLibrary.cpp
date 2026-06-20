@@ -26,7 +26,7 @@ namespace glgpus
 		}
 		{
 			GLGPUS_PROFILER_SCOPE("cct::DynLib::GetFunction(DrvDescribePixelFormat)");
-			m_drvProcTable.DrvDescribePixelFormat = m_icd.GetFunction<BOOL, HDC, int, UINT, PIXELFORMATDESCRIPTOR*>("DrvDescribePixelFormat");
+			m_drvProcTable.DrvDescribePixelFormat = m_icd.GetFunction<int, HDC, int, UINT, PIXELFORMATDESCRIPTOR*>("DrvDescribePixelFormat");
 			if (!m_drvProcTable.DrvDescribePixelFormat)
 			{
 				GLGPUS_ASSERT_FALSE("Could not find 'DrvDescribePixelFormat' in ICD");
@@ -195,14 +195,14 @@ namespace glgpus
 		return m_drvProcTable.DrvSetPixelFormat(hdc, pixelFormat);
 	}
 
-	BOOL WglIcdLibrary::DrvDescribePixelFormat(HDC hdc, int pixelFormat, UINT nBytes, PIXELFORMATDESCRIPTOR* ppfd) const
+	int WglIcdLibrary::DrvDescribePixelFormat(HDC hdc, int pixelFormat, UINT nBytes, PIXELFORMATDESCRIPTOR* ppfd) const
 	{
 		GLGPUS_AUTO_PROFILER_SCOPE();
 
 		if (!m_drvProcTable.DrvDescribePixelFormat)
 		{
 			GLGPUS_ASSERT_FALSE("Invalid function 'DrvDescribePixelFormat' in IcdLibrary");
-			return false;
+			return 0;
 		}
 		return m_drvProcTable.DrvDescribePixelFormat(hdc, pixelFormat, nBytes, ppfd);
 	}

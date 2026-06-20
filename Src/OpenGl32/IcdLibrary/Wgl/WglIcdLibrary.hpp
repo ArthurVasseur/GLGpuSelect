@@ -19,7 +19,7 @@ namespace glgpus
 		bool Load(std::string_view icdPath) override;
 
 		BOOL DrvSetPixelFormat(HDC hdc, int pixelFormat) const;
-		BOOL DrvDescribePixelFormat(HDC hdc, int pixelFormat, UINT nBytes, PIXELFORMATDESCRIPTOR* ppfd) const;
+		int DrvDescribePixelFormat(HDC hdc, int pixelFormat, UINT nBytes, PIXELFORMATDESCRIPTOR* ppfd) const;
 		HGLRC DrvCreateContext(HDC hdc) const;
 		HGLRC DrvCreateLayerContext(HDC hdc, int layerPlane) const;
 		BOOL DrvDeleteContext(HGLRC hglrc) const;
@@ -42,7 +42,7 @@ namespace glgpus
 		{
 			// correspond topublic wgl functions
 			cct::FunctionRef<BOOL(HDC, int)> DrvSetPixelFormat;
-			cct::FunctionRef<BOOL(HDC, int, UINT, PIXELFORMATDESCRIPTOR*)> DrvDescribePixelFormat;
+			cct::FunctionRef<int(HDC, int, UINT, PIXELFORMATDESCRIPTOR*)> DrvDescribePixelFormat;
 			cct::FunctionRef<HGLRC(HDC)> DrvCreateContext;
 			cct::FunctionRef<HGLRC(HDC, int)> DrvCreateLayerContext;
 			cct::FunctionRef<BOOL(HGLRC)> DrvDeleteContext;

@@ -74,18 +74,24 @@ namespace
 	}
 	glgpus::WglIcdLibrary& GetWglIcdLibrary()
 	{
-		return glgpus::IcdLoader::Instance()->GetPlatformIcd<glgpus::WglIcdLibrary>();
+		auto* instance = glgpus::IcdLoader::Instance();
+		GLGPUS_ASSERT(instance != nullptr, "IcdLoader instance is null");
+		return instance->GetPlatformIcd<glgpus::WglIcdLibrary>();
 	}
 }
 
 extern "C" GLGPUS_API void CCT_CALL wglSetCurrentValue(void* value)
 {
-	glgpus::IcdLoader::Instance()->SetCurrentValue(value);
+	if (auto* instance = glgpus::IcdLoader::Instance())
+		instance->SetCurrentValue(value);
 }
 
 extern "C" GLGPUS_API void* CCT_CALL wglGetCurrentValue()
 {
-	return glgpus::IcdLoader::Instance()->GetCurrentValue();
+	auto* instance = glgpus::IcdLoader::Instance();
+	if (instance == nullptr)
+		return nullptr;
+	return instance->GetCurrentValue();
 }
 
 extern "C" GLGPUS_API DHGLRC CCT_CALL wglGetDHGLRC(glgpus::IcdDeviceContextWrapper* context)
@@ -121,6 +127,11 @@ int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 		{
 			adapterIndex = std::stoi(value);
 		}
+		if (adapterIndex >= adapters.size())
+		{
+			GLGPUS_ASSERT_FALSE("GLGPUS_ADAPTER_OS_INDEX is out of range");
+			return -1;
+		}
 		auto& selectedAdapter = adapters[adapterIndex];
 		if (glgpusInstance->ChooseDevice(selectedAdapter.Uuid) != 0)
 		{
@@ -143,7 +154,7 @@ int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 	}
 
 	if (ppfd == nullptr)
-		return true;
+		return 0;
 
 	auto count = GetWglIcdLibrary().DrvDescribePixelFormat(hdc, 0, 0, nullptr);
 	int bestIndex = 0;
@@ -179,7 +190,10 @@ int wglGetPixelFormat(HDC hdc)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
-	return glgpus::IcdLoader::Instance()->GetSelectedPixelFormatIndex();
+	auto* instance = glgpus::IcdLoader::Instance();
+	if (instance == nullptr)
+		return 0;
+	return instance->GetSelectedPixelFormatIndex();
 }
 
 int wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, PIXELFORMATDESCRIPTOR* ppfd)
@@ -257,6 +271,12 @@ BOOL wglDeleteContext(HGLRC hglrc)
 
 	if (icdDeviceContextWrapper->DeviceContext->IsActive())
 	{
+		if (!icdDeviceContextWrapper->DeviceContext->IsActiveOnCurrentThread())
+		{
+			GLGPUS_ASSERT_FALSE("Attempted to delete a context that is active on another thread");
+			SetLastError(ERROR_BUSY);
+			return false;
+		}
 		GLGPUS_LOG_WARN("Attempted to delete an active HGLRC ({}); automatically unbinding the context. "
 						"Please ensure you call wglMakeCurrent(NULL, NULL) before deleting the context in your code.", reinterpret_cast<void*>(hglrc));
 		if (!wglMakeCurrent(nullptr, nullptr))
@@ -299,7 +319,11 @@ BOOL wglMakeCurrent(HDC hdc, HGLRC hglrc)
 	if (icdDeviceContextWrapper == nullptr)
 	{
 		if (glgpus::IcdDeviceContextWrapper* currentContext = glgpuInstance->GetCurrentDeviceContextForCurrentThread())
+		{
+			HDC currentHdc = static_cast<HDC>(currentContext->DeviceContext->GetPlatformDeviceContext());
+			GetWglIcdLibrary().DrvSetContext(currentHdc, nullptr, nullptr);
 			GetWglIcdLibrary().DrvReleaseContext(currentContext->IcdDeviceContext);
+		}
 		glgpuInstance->ResetCurrentDeviceContextForCurrentThread();
 		return true;
 	}
@@ -336,7 +360,10 @@ HGLRC wglGetCurrentContext()
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
-	auto* deviceContext = glgpus::IcdLoader::Instance()->GetCurrentDeviceContextForCurrentThread();
+	auto* instance = glgpus::IcdLoader::Instance();
+	if (instance == nullptr)
+		return nullptr;
+	auto* deviceContext = instance->GetCurrentDeviceContextForCurrentThread();
 	if (deviceContext == nullptr)
 		return nullptr;
 	return reinterpret_cast<HGLRC>(deviceContext);
@@ -346,7 +373,10 @@ HDC  wglGetCurrentDC()
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
-	auto* deviceContext = glgpus::IcdLoader::Instance()->GetCurrentDeviceContextForCurrentThread();
+	auto* instance = glgpus::IcdLoader::Instance();
+	if (instance == nullptr)
+		return nullptr;
+	auto* deviceContext = instance->GetCurrentDeviceContextForCurrentThread();
 	if (deviceContext == nullptr || deviceContext->DeviceContext == nullptr)
 		return nullptr;
 	return static_cast<HDC>(deviceContext->DeviceContext->GetPlatformDeviceContext());

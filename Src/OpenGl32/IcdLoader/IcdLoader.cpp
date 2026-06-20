@@ -161,7 +161,9 @@ namespace glgpus
 						GLGPUS_PROFILER_SCOPE("ToUtf8");
 						name = ToUtf8(registry.AdapterString);
 					}
-					std::memcpy(&adapterInfo.Name, name.data(), name.size());
+					const std::size_t copyLen = std::min(name.size(), sizeof(adapterInfo.Name) - 1);
+					std::memcpy(&adapterInfo.Name, name.data(), copyLen);
+					adapterInfo.Name[copyLen] = '\0';
 					adapterInfo.Index = i;
 					adapters.emplace_back(adapterInfo);
 				}
@@ -205,13 +207,13 @@ namespace glgpus
 
 	IcdLoader* IcdLoader::Instance()
 	{
-		if (s_instance == nullptr)
+		static std::once_flag s_initFlag;
+		std::call_once(s_initFlag, []()
 		{
 			auto* instance = new(std::nothrow) IcdLoader();
-			if (instance == nullptr)
-				return nullptr;
-			s_instance.reset(instance);
-		}
+			if (instance)
+				s_instance.reset(instance);
+		});
 		return s_instance.get();
 	}
 
@@ -291,9 +293,8 @@ namespace glgpus
 
 	void IcdLoader::SetCurrentDeviceContextForCurrentThread(IcdDeviceContextWrapper& currentDeviceContext)
 	{
-		currentDeviceContext.DeviceContext->SetActiveOnCurrentThread();
-
 		std::scoped_lock _(m_deviceContextByThreadMutex);
+		currentDeviceContext.DeviceContext->SetActiveOnCurrentThread();
 		m_deviceContextByThread[std::this_thread::get_id()] = &currentDeviceContext;
 	}
 
