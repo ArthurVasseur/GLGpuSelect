@@ -458,6 +458,11 @@ BOOL wglUseFontBitmaps(HDC hdc, DWORD first, DWORD count, DWORD listBase)
 	return false;
 }
 
+BOOL wglUseFontBitmapsA(HDC hdc, DWORD first, DWORD count, DWORD listBase)
+{
+	return wglUseFontBitmaps(hdc, first, count, listBase);
+}
+
 BOOL wglUseFontBitmapsW(HDC hdc, DWORD first, DWORD count, DWORD listBase)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
@@ -474,12 +479,44 @@ BOOL wglUseFontOutlines(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT
 	return false;
 }
 
+BOOL wglUseFontOutlinesA(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, void* lpgmf)
+{
+	return wglUseFontOutlines(hdc, first, count, listBase, deviation, extrusion, format, lpgmf);
+}
+
 BOOL wglUseFontOutlinesW(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, void* lpgmf)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
 	GLGPUS_ASSERT_FALSE("Not implemented");
 	return false;
+}
+
+PROC wglGetDefaultProcAddress(LPCSTR lpszProc)
+{
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
+	SetLastError(ERROR_PROC_NOT_FOUND);
+	return nullptr;
+}
+
+DWORD wglSwapMultipleBuffers(UINT n, const WGLSWAP* ps)
+{
+	GLGPUS_AUTO_PROFILER_SCOPE();
+
+	if (n > 16)
+	{
+		SetLastError(ERROR_INVALID_PARAMETER);
+		return 0;
+	}
+
+	DWORD failed = 0;
+	for (UINT i = 0; i < n; ++i)
+	{
+		if (!wglSwapBuffers(ps[i].hdc))
+			failed |= (1u << i);
+	}
+	return failed;
 }
 
 #endif

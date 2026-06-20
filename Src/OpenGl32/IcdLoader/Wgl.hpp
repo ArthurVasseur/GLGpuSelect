@@ -59,6 +59,11 @@ struct PIXELFORMATDESCRIPTOR
 	DWORD dwDamageMask;
 };
 
+struct WGLSWAP
+{
+	HDC  hdc;
+	UINT uiFlags;
+};
 
 extern "C" GLGPUS_API int CCT_CALL wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd);
 extern "C" GLGPUS_API int CCT_CALL wglSetPixelFormat(HDC hdc, int format, [[maybe_unused]] const PIXELFORMATDESCRIPTOR* ppfd);
@@ -80,8 +85,12 @@ extern "C" GLGPUS_API BOOL CCT_CALL wglSwapBuffers(HDC hdc);
 extern "C" GLGPUS_API BOOL CCT_CALL wglSwapLayerBuffers(HDC hdc, UINT fuPlanes);
 extern "C" GLGPUS_API void* CCT_CALL wglGetProcAddress(LPCSTR lpszProc);
 extern "C" GLGPUS_API BOOL CCT_CALL wglUseFontBitmaps(HDC hdc, DWORD first, DWORD count, DWORD listBase);
+extern "C" GLGPUS_API BOOL CCT_CALL wglUseFontBitmapsA(HDC hdc, DWORD first, DWORD count, DWORD listBase);
 extern "C" GLGPUS_API BOOL CCT_CALL wglUseFontBitmapsW(HDC hdc, DWORD first, DWORD count, DWORD listBase);
 extern "C" GLGPUS_API BOOL CCT_CALL wglUseFontOutlines(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, void* lpgmf);
+extern "C" GLGPUS_API BOOL CCT_CALL wglUseFontOutlinesA(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, void* lpgmf);
 extern "C" GLGPUS_API BOOL CCT_CALL wglUseFontOutlinesW(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, void* lpgmf);
+extern "C" GLGPUS_API PROC CCT_CALL wglGetDefaultProcAddress(LPCSTR lpszProc);
+extern "C" GLGPUS_API DWORD CCT_CALL wglSwapMultipleBuffers(UINT n, const WGLSWAP* ps);
 
 #endif // CCT_PLATFORM_WINDOWS
