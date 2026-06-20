@@ -29,7 +29,7 @@
 #endif
 
 #ifdef GLGPUS_LOGGING
-	#include <Concerto/Core/Logger.hpp>
+	#include <Concerto/Core/Logger/Logger.hpp>
 	#define GLGPUS_LOG_ERROR(fmt, ...) cct::Logger::Error(fmt, __VA_ARGS__)
 	#define GLGPUS_LOG_WARN(fmt, ...) cct::Logger::Warning(fmt, __VA_ARGS__)
 	#define GLGPUS_LOG_INFO(fmt, ...) cct::Logger::Info(fmt, __VA_ARGS__)
