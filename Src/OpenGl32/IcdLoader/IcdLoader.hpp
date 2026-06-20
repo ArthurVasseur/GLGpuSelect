@@ -5,12 +5,19 @@
 #pragma once
 
 #include <mutex>
+#include <unordered_map>
 #include <vector>
 #include <Concerto/Core/DynLib/DynLib.hpp>
 
 #include "OpenGl32/Defines.hpp"
 #include "OpenGl32/GLGpuSelect.h"
 #include "OpenGl32/IcdLibrary/IcdLibrary.hpp"
+
+#ifdef CCT_PLATFORM_WINDOWS
+#include <Windows.h>
+#undef min
+#undef max
+#endif
 
 namespace glgpus
 {
@@ -25,6 +32,7 @@ namespace glgpus
 		cct::UInt32 ChooseDevice(cct::UInt64 pDeviceUuid);
 
 		IcdLibrary& GetIcd() const;
+
 		template<typename T>
 		T& GetPlatformIcd()
 		{
@@ -34,8 +42,13 @@ namespace glgpus
 			return static_cast<T&>(*m_icdLibrary);
 		}
 
-		void SetSelectedPixelFormatIndex(cct::Int32 pixelFormatIndex);
-		cct::Int32 GetSelectedPixelFormatIndex() const;
+		void EnsureInitialized();
+		bool IsInitialized() const { return m_initialized; }
+
+#ifdef CCT_PLATFORM_WINDOWS
+		void SetSelectedPixelFormatIndex(HDC hdc, int index);
+		int  GetSelectedPixelFormatIndex(HDC hdc) const;
+#endif
 
 		void SetCurrentDeviceContextForCurrentThread(IcdDeviceContextWrapper& currentDeviceContext);
 		IcdDeviceContextWrapper* GetCurrentDeviceContextForCurrentThread() const;
@@ -49,10 +62,11 @@ namespace glgpus
 		static std::unique_ptr<IcdLoader> s_instance;
 		std::unique_ptr<IcdLibrary> m_icdLibrary;
 		std::vector<AdapterInfo> m_adapterInfos;
-		cct::Int32 m_selectedPixelFormatIndex;
+		bool m_initialized;
 
 		mutable std::mutex m_deviceContextByThreadMutex;
 		std::unordered_map<std::thread::id, IcdDeviceContextWrapper*> m_deviceContextByThread;
+		std::unordered_map<void*, int> m_pixelFormatByHdc;
 
 		void* m_currentValue;
 	};

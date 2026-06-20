@@ -179,6 +179,11 @@ namespace glgpus
 				SetLastError(ERROR_PROC_NOT_FOUND);
 			}
 		}
+		{
+			GLGPUS_PROFILER_SCOPE("cct::DynLib::GetFunction(DrvPresentBuffers)");
+			m_drvProcTable.DrvPresentBuffers = m_icd.GetFunction<BOOL, HDC, WGLPRESENTBUFFERSDATA*>("DrvPresentBuffers");
+			// Optional not all ICDs export DrvPresentBuffers; absence is not an error.
+		}
 
 		return true;
 	}
@@ -397,5 +402,14 @@ namespace glgpus
 			return false;
 		}
 		return m_drvProcTable.DrvRealizeLayerPalette(hdc, layerPlane, bRealize);
+	}
+
+	BOOL WglIcdLibrary::DrvPresentBuffers(HDC hdc, WGLPRESENTBUFFERSDATA* data) const
+	{
+		GLGPUS_AUTO_PROFILER_SCOPE();
+
+		if (!m_drvProcTable.DrvPresentBuffers)
+			return FALSE;
+		return m_drvProcTable.DrvPresentBuffers(hdc, data);
 	}
 } // namespace glgpus

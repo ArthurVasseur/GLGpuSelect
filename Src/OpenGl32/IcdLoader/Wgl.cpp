@@ -9,6 +9,7 @@
 
 #include "OpenGl32/IcdLoader/Wgl.hpp"
 #include "OpenGl32/DeviceContext/DeviceContext.hpp"
+#include "OpenGl32/DeviceContext/Wgl/WglDeviceContext.hpp"
 #include "OpenGl32/IcdLibrary/Wgl/WglIcdLibrary.hpp"
 #include "OpenGl32/IcdLoader/IcdLoader.hpp"
 
@@ -72,7 +73,8 @@ namespace
 
 		return currentDevice;
 	}
-	glgpus::WglIcdLibrary& GetWglIcdLibrary()
+
+	glgpus::WglIcdLibrary& GetIcdLibrary()
 	{
 		auto* instance = glgpus::IcdLoader::Instance();
 		GLGPUS_ASSERT(instance != nullptr, "IcdLoader instance is null");
@@ -97,7 +99,7 @@ extern "C" GLGPUS_API void* CCT_CALL wglGetCurrentValue()
 extern "C" GLGPUS_API DHGLRC CCT_CALL wglGetDHGLRC(glgpus::IcdDeviceContextWrapper* context)
 {
 	if (context)
-		return context->IcdDeviceContext;
+		return context->DeviceContext->GetIcdContext();
 	return nullptr;
 }
 
@@ -112,58 +114,41 @@ int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 		return -1;
 	}
 
-	if (glgpusInstance->GetIcd().IsLoaded() == false)
+	glgpusInstance->EnsureInitialized();
+	if (!glgpusInstance->IsInitialized())
+		return -1;
+
+	// opengl32.dll passes 9 callbacks; atio6axx reads callbacks[2] and [4] unconditionally
+	// regardless of count, so passing fewer than 5 entries causes a buffer over-read in the ICD.
+	// Entries 3-8 are D3DKMTPresent/DC-query callbacks we don't implement; pass null.
+	static std::once_flag s_callbacksFlag;
+	std::call_once(s_callbacksFlag, [&]()
 	{
-		glgpusInstance->EnumerateAdapters(nullptr, nullptr); // force enumeration of adapters
-		const auto& adapters = glgpusInstance->GetAdapterInfos();
-		if (adapters.empty())
-		{
-			GLGPUS_ASSERT_FALSE("No adapters found");
-			return -1;
-		}
-
-		std::size_t adapterIndex = 0;
-		if (const auto* value = std::getenv("GLGPUS_ADAPTER_OS_INDEX"))
-		{
-			adapterIndex = std::stoi(value);
-		}
-		if (adapterIndex >= adapters.size())
-		{
-			GLGPUS_ASSERT_FALSE("GLGPUS_ADAPTER_OS_INDEX is out of range");
-			return -1;
-		}
-		auto& selectedAdapter = adapters[adapterIndex];
-		if (glgpusInstance->ChooseDevice(selectedAdapter.Uuid) != 0)
-		{
-			GLGPUS_ASSERT_FALSE("Failed to choose device");
-			return -1;
-		}
-
-		if (GetWglIcdLibrary().DrvValidateVersion(selectedAdapter.openGlVersion) == 0)
-			return glgpus::MakeResult(glgpus::glgpusResult::Unknown, "Invalid version");
-
-		// Must follow WGLCALLBACKS in gldrv.h
-		// On an ATI ICD, other values seems to not be supported, it makes the driver crash
-		std::array callbacks = {
+		std::array<FARPROC, 9> callbacks = {
 			reinterpret_cast<FARPROC>(wglSetCurrentValue),
 			reinterpret_cast<FARPROC>(wglGetCurrentValue),
 			reinterpret_cast<FARPROC>(wglGetDHGLRC),
+			nullptr, // ??
+			nullptr, // ??
+			nullptr, // D3DKMTPresent (legacy blit)
+			nullptr, // display config
+			nullptr, // D3DKMTPresent (blit)
+			nullptr, // D3DKMTSubmitPresentToHwQueue (flip)
 		};
-
-		GetWglIcdLibrary().DrvSetCallbackProcs(callbacks.size(), callbacks.data());
-	}
+		GetIcdLibrary().DrvSetCallbackProcs(static_cast<int>(callbacks.size()), callbacks.data());
+	});
 
 	if (ppfd == nullptr)
 		return 0;
 
-	auto count = GetWglIcdLibrary().DrvDescribePixelFormat(hdc, 0, 0, nullptr);
+	auto count = GetIcdLibrary().DrvDescribePixelFormat(hdc, 0, 0, nullptr);
 	int bestIndex = 0;
 	int bestScore = std::numeric_limits<int>::max();
 
 	for (long i = 1; i <= count; ++i)
 	{
 		PIXELFORMATDESCRIPTOR pixelFormatDescriptor;
-		GetWglIcdLibrary().DrvDescribePixelFormat(hdc, i, sizeof(PIXELFORMATDESCRIPTOR), &pixelFormatDescriptor);
+		GetIcdLibrary().DrvDescribePixelFormat(hdc, i, sizeof(PIXELFORMATDESCRIPTOR), &pixelFormatDescriptor);
 		if (int score = ScorePFD(ppfd, &pixelFormatDescriptor); score < bestScore)
 		{
 			bestScore = score;
@@ -173,9 +158,7 @@ int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 		}
 	}
 
-	glgpus::IcdLoader::Instance()->SetSelectedPixelFormatIndex(bestIndex);
-
-	
+	glgpusInstance->SetSelectedPixelFormatIndex(hdc, bestIndex);
 	return bestIndex;
 }
 
@@ -183,7 +166,7 @@ int wglSetPixelFormat(HDC hdc, int format, [[maybe_unused]] const PIXELFORMATDES
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
-	return GetWglIcdLibrary().DrvSetPixelFormat(hdc, format);
+	return GetIcdLibrary().DrvSetPixelFormat(hdc, format);
 }
 
 int wglGetPixelFormat(HDC hdc)
@@ -193,21 +176,21 @@ int wglGetPixelFormat(HDC hdc)
 	auto* instance = glgpus::IcdLoader::Instance();
 	if (instance == nullptr)
 		return 0;
-	return instance->GetSelectedPixelFormatIndex();
+	return instance->GetSelectedPixelFormatIndex(hdc);
 }
 
 int wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, PIXELFORMATDESCRIPTOR* ppfd)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
-	return GetWglIcdLibrary().DrvDescribePixelFormat(hdc, iPixelFormat, nBytes, ppfd);
+	return GetIcdLibrary().DrvDescribePixelFormat(hdc, iPixelFormat, nBytes, ppfd);
 }
 
 HGLRC wglCreateContext(HDC hdc)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
-	auto icdDeviceContext = GetWglIcdLibrary().DrvCreateContext(hdc);
+	auto icdDeviceContext = GetIcdLibrary().DrvCreateContext(hdc);
 
 	if (icdDeviceContext == nullptr)
 	{
@@ -216,8 +199,7 @@ HGLRC wglCreateContext(HDC hdc)
 	}
 
 	auto* icdDeviceContextWrapper = new glgpus::IcdDeviceContextWrapper;
-	icdDeviceContextWrapper->DeviceContext = new glgpus::DeviceContext(hdc);
-	icdDeviceContextWrapper->IcdDeviceContext = icdDeviceContext;
+	icdDeviceContextWrapper->DeviceContext = new glgpus::WglDeviceContext(hdc, icdDeviceContext);
 
 #ifdef GLGPUS_LOG_CONTEXT_MANIPULATION
 	GLGPUS_LOG_WARN("wglCreateContext(hdc {}) -> HGLRC: {}", static_cast<void*>(hdc), static_cast<void*>(icdDeviceContext));
@@ -230,7 +212,7 @@ HGLRC wglCreateLayerContext(HDC hdc, int layerPlane)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
-	auto icdDeviceContext = GetWglIcdLibrary().DrvCreateLayerContext(hdc, layerPlane);
+	auto icdDeviceContext = GetIcdLibrary().DrvCreateLayerContext(hdc, layerPlane);
 
 	if (icdDeviceContext == nullptr)
 	{
@@ -239,9 +221,7 @@ HGLRC wglCreateLayerContext(HDC hdc, int layerPlane)
 	}
 
 	auto* icdDeviceContextWrapper = new glgpus::IcdDeviceContextWrapper;
-	icdDeviceContextWrapper->DeviceContext = new glgpus::DeviceContext(hdc);
-	icdDeviceContextWrapper->IcdDeviceContext = icdDeviceContext;
-
+	icdDeviceContextWrapper->DeviceContext = new glgpus::WglDeviceContext(hdc, icdDeviceContext);
 
 #ifdef GLGPUS_LOG_CONTEXT_MANIPULATION
 	GLGPUS_LOG_WARN("wglCreateLayerContext(hdc {}, layerPlane {}) -> HGLRC: {}", static_cast<void*>(hdc), layerPlane, static_cast<void*>(icdDeviceContext));
@@ -284,19 +264,21 @@ BOOL wglDeleteContext(HGLRC hglrc)
 	}
 
 #ifdef GLGPUS_LOG_CONTEXT_MANIPULATION
-	GLGPUS_LOG_WARN("wglDeleteContext(hglrc {}) associated hdc: {}", icdDeviceContextWrapper->IcdDeviceContext, icdDeviceContextWrapper->DeviceContext->GetPlatformDeviceContext());
+	GLGPUS_LOG_WARN("wglDeleteContext(hglrc {}) associated hdc: {}",
+		icdDeviceContextWrapper->DeviceContext->GetIcdContext(),
+		icdDeviceContextWrapper->DeviceContext->GetPlatformDeviceContext());
 #endif
 
-	bool result = GetWglIcdLibrary().DrvDeleteContext(static_cast<HGLRC>(icdDeviceContextWrapper->IcdDeviceContext));
-	delete icdDeviceContextWrapper->DeviceContext;
-	delete icdDeviceContextWrapper;
+	bool result = icdDeviceContextWrapper->DeviceContext->DeleteContext();
+	delete icdDeviceContextWrapper;  // destructor handles DeviceContext
 
 	return result;
 }
 
 void SetProcTable(const glgpus::GlProcTable*)
 {
-	CCT_BREAK_IN_DEBUGGER;
+	// The dispatch table is retrieved from DrvSetContext's return value.
+	// If an ICD calls this callback instead, we silently ignore it.
 }
 
 BOOL wglMakeCurrent(HDC hdc, HGLRC hglrc)
@@ -313,7 +295,8 @@ BOOL wglMakeCurrent(HDC hdc, HGLRC hglrc)
 	}
 
 #ifdef GLGPUS_LOG_CONTEXT_MANIPULATION
-	GLGPUS_LOG_WARN("wglMakeCurrent(hdc {}, hglrc: {})", static_cast<void*>(hdc), icdDeviceContextWrapper ? icdDeviceContextWrapper->IcdDeviceContext : nullptr);
+	GLGPUS_LOG_WARN("wglMakeCurrent(hdc {}, hglrc: {})", static_cast<void*>(hdc),
+		icdDeviceContextWrapper ? icdDeviceContextWrapper->DeviceContext->GetIcdContext() : nullptr);
 #endif
 
 	if (icdDeviceContextWrapper == nullptr)
@@ -321,8 +304,8 @@ BOOL wglMakeCurrent(HDC hdc, HGLRC hglrc)
 		if (glgpus::IcdDeviceContextWrapper* currentContext = glgpuInstance->GetCurrentDeviceContextForCurrentThread())
 		{
 			HDC currentHdc = static_cast<HDC>(currentContext->DeviceContext->GetPlatformDeviceContext());
-			GetWglIcdLibrary().DrvSetContext(currentHdc, nullptr, nullptr);
-			GetWglIcdLibrary().DrvReleaseContext(currentContext->IcdDeviceContext);
+			GetIcdLibrary().DrvSetContext(currentHdc, nullptr, SetProcTable);
+			GetIcdLibrary().DrvReleaseContext(currentContext->DeviceContext->GetIcdContext());
 		}
 		glgpuInstance->ResetCurrentDeviceContextForCurrentThread();
 		return true;
@@ -337,8 +320,10 @@ BOOL wglMakeCurrent(HDC hdc, HGLRC hglrc)
 		return false;
 	}
 
-	const auto* dispatchTable = GetWglIcdLibrary().DrvSetContext(hdc, static_cast<HGLRC>(icdDeviceContextWrapper->IcdDeviceContext), SetProcTable);
-
+	const auto* dispatchTable = GetIcdLibrary().DrvSetContext(
+		hdc,
+		static_cast<HGLRC>(icdDeviceContextWrapper->DeviceContext->GetIcdContext()),
+		SetProcTable);
 
 	if (!dispatchTable)
 	{
@@ -396,7 +381,8 @@ BOOL wglShareLists(HGLRC hglrc1, HGLRC hglrc2)
 		return false;
 	}
 
-	return GetWglIcdLibrary().DrvShareLists(static_cast<HGLRC>(icdDeviceContextWrapper1->IcdDeviceContext), static_cast<HGLRC>(icdDeviceContextWrapper2->IcdDeviceContext));
+	return icdDeviceContextWrapper1->DeviceContext->ShareLists(
+		icdDeviceContextWrapper2->DeviceContext->GetIcdContext());
 }
 
 BOOL wglCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask)
@@ -413,35 +399,35 @@ BOOL wglCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask)
 		return false;
 	}
 
-	return GetWglIcdLibrary().DrvCopyContext(static_cast<HGLRC>(src->IcdDeviceContext), static_cast<HGLRC>(dst->IcdDeviceContext), mask);
+	return dst->DeviceContext->CopyContext(src->DeviceContext->GetIcdContext(), mask);
 }
 
 int  wglDescribeLayerPlane(HDC hdc, int pixelFormat, int layerPlane, UINT nBytes, void* plpd)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
-	return GetWglIcdLibrary().DrvDescribeLayerPlane(hdc, pixelFormat, layerPlane, nBytes, plpd);
+	return GetIcdLibrary().DrvDescribeLayerPlane(hdc, pixelFormat, layerPlane, nBytes, plpd);
 }
 
 BOOL wglRealizeLayerPalette(HDC hdc, int layerPlane, BOOL bRealize)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
-	return GetWglIcdLibrary().DrvRealizeLayerPalette(hdc, layerPlane, bRealize);
+	return GetIcdLibrary().DrvRealizeLayerPalette(hdc, layerPlane, bRealize);
 }
 
 int  wglSetLayerPaletteEntries(HDC hdc, int layerPlane, int start, int numEntries, const void* pe)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
-	return GetWglIcdLibrary().DrvSetLayerPaletteEntries(hdc, layerPlane, start, numEntries, pe);
+	return GetIcdLibrary().DrvSetLayerPaletteEntries(hdc, layerPlane, start, numEntries, pe);
 }
 
 int  wglGetLayerPaletteEntries(HDC hdc, int layerPlane, int start, int numEntries, int* pcr)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
-	return GetWglIcdLibrary().DrvGetLayerPaletteEntries(hdc, layerPlane, start, numEntries, pcr);
+	return GetIcdLibrary().DrvGetLayerPaletteEntries(hdc, layerPlane, start, numEntries, pcr);
 }
 
 BOOL wglSwapBuffers(HDC hdc)
@@ -451,7 +437,7 @@ BOOL wglSwapBuffers(HDC hdc)
 	if (SwapBuffersRuntimeCheck(hdc) == nullptr)
 		return false;
 
-	return GetWglIcdLibrary().DrvSwapBuffers(hdc);
+	return GetIcdLibrary().DrvSwapBuffers(hdc);
 }
 
 BOOL wglSwapLayerBuffers(HDC hdc, UINT fuPlanes)
@@ -461,7 +447,7 @@ BOOL wglSwapLayerBuffers(HDC hdc, UINT fuPlanes)
 	if (SwapBuffersRuntimeCheck(hdc) == nullptr)
 		return false;
 
-	return GetWglIcdLibrary().DrvSwapLayerBuffers(hdc, fuPlanes);
+	return GetIcdLibrary().DrvSwapLayerBuffers(hdc, fuPlanes);
 }
 
 void* wglGetProcAddress(LPCSTR lpszProc)
@@ -474,7 +460,7 @@ void* wglGetProcAddress(LPCSTR lpszProc)
 	if (const auto func = GetProcAddress(GetThisDllHandle(), lpszProc))
 		return reinterpret_cast<void*>(func);
 
-	if (const auto func = GetWglIcdLibrary().DrvGetProcAddress(lpszProc))
+	if (const auto func = GetIcdLibrary().DrvGetProcAddress(lpszProc))
 		return func;
 
 	return nullptr;

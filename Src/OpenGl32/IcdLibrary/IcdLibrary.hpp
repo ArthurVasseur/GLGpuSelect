@@ -21,6 +21,7 @@ namespace glgpus
 		{
 			return m_icd;
 		}
+
 	protected:
 		cct::DynLib m_icd;
 	};

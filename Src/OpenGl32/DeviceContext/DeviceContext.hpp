@@ -14,6 +14,7 @@ namespace glgpus
 	{
 	public:
 		DeviceContext(void* platformDeviceContext);
+		virtual ~DeviceContext() = default;
 
 		void SetGlDispatchTable(const OpenGlDispatchTable& dispatchTable);
 		const OpenGlDispatchTable& GetGlDispatchTable() const;
@@ -27,6 +28,11 @@ namespace glgpus
 		void SetCurrentValue(void* currentValue);
 		void* GetCurrentValue() const;
 
+		virtual void* GetIcdContext() const { return nullptr; }
+		virtual bool DeleteContext() { return false; }
+		virtual bool ShareLists(void* otherIcdContext) { return false; }
+		virtual bool CopyContext(void* srcIcdContext, unsigned int mask) { return false; }
+
 	private:
 		OpenGlDispatchTable m_dispatchTable;
 		std::thread::id m_activeOnThread;
@@ -37,6 +43,6 @@ namespace glgpus
 	struct IcdDeviceContextWrapper
 	{
 		DeviceContext* DeviceContext = nullptr;
-		void* IcdDeviceContext = nullptr;
+		~IcdDeviceContextWrapper() { delete DeviceContext; }
 	};
 } // namespace glgpus

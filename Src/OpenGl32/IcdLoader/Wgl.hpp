@@ -65,6 +65,8 @@ struct WGLSWAP
 	UINT uiFlags;
 };
 
+struct WGLPRESENTBUFFERSDATA;
+
 extern "C" GLGPUS_API int CCT_CALL wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd);
 extern "C" GLGPUS_API int CCT_CALL wglSetPixelFormat(HDC hdc, int format, [[maybe_unused]] const PIXELFORMATDESCRIPTOR* ppfd);
 extern "C" GLGPUS_API int CCT_CALL wglGetPixelFormat(HDC hdc);

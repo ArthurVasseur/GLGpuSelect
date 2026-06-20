@@ -200,7 +200,7 @@ namespace glgpus
 #ifdef CCT_PLATFORM_WINDOWS
 		m_icdLibrary(std::make_unique<WglIcdLibrary>()),
 #endif
-		m_selectedPixelFormatIndex(0),
+		m_initialized(false),
 		m_currentValue(nullptr)
 	{
 	}
@@ -281,15 +281,62 @@ namespace glgpus
 		return *m_icdLibrary;
 	}
 
-	void IcdLoader::SetSelectedPixelFormatIndex(cct::Int32 pixelFormatIndex)
+	void IcdLoader::EnsureInitialized()
 	{
-		m_selectedPixelFormatIndex = pixelFormatIndex;
+#ifdef CCT_PLATFORM_WINDOWS
+		static std::once_flag s_icdInitFlag;
+		std::call_once(s_icdInitFlag, [this]()
+		{
+			EnumerateAdapters(nullptr, nullptr);
+			const auto& adapters = GetAdapterInfos();
+			if (adapters.empty())
+			{
+				GLGPUS_ASSERT_FALSE("No adapters found");
+				return;
+			}
+
+			std::size_t adapterIndex = 0;
+			if (const auto* value = std::getenv("GLGPUS_ADAPTER_OS_INDEX"))
+				adapterIndex = std::stoi(value);
+
+			if (adapterIndex >= adapters.size())
+			{
+				GLGPUS_ASSERT_FALSE("GLGPUS_ADAPTER_OS_INDEX is out of range");
+				return;
+			}
+
+			const auto& selectedAdapter = adapters[adapterIndex];
+			if (ChooseDevice(selectedAdapter.Uuid) != 0)
+			{
+				GLGPUS_ASSERT_FALSE("Failed to choose device");
+				return;
+			}
+
+			if (GetPlatformIcd<WglIcdLibrary>().DrvValidateVersion(selectedAdapter.openGlVersion) == 0)
+			{
+				GLGPUS_ASSERT_FALSE("Invalid ICD version");
+				return;
+			}
+
+			m_initialized = true;
+		});
+#endif
 	}
 
-	cct::Int32 IcdLoader::GetSelectedPixelFormatIndex() const
+#ifdef CCT_PLATFORM_WINDOWS
+	void IcdLoader::SetSelectedPixelFormatIndex(HDC hdc, int index)
 	{
-		return m_selectedPixelFormatIndex;
+		std::scoped_lock _(m_deviceContextByThreadMutex);
+		m_pixelFormatByHdc[static_cast<void*>(hdc)] = index;
 	}
+
+	int IcdLoader::GetSelectedPixelFormatIndex(HDC hdc) const
+	{
+		std::scoped_lock _(m_deviceContextByThreadMutex);
+		auto it = m_pixelFormatByHdc.find(static_cast<void*>(hdc));
+		return it != m_pixelFormatByHdc.end() ? it->second : 0;
+	}
+#endif
 
 	void IcdLoader::SetCurrentDeviceContextForCurrentThread(IcdDeviceContextWrapper& currentDeviceContext)
 	{
