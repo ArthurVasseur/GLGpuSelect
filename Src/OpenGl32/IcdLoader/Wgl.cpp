@@ -165,8 +165,6 @@ int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 	glgpus::IcdLoader::Instance()->SetSelectedPixelFormatIndex(bestIndex);
 
 	
-	auto res = GetWglIcdLibrary().DrvGetProcAddress("wglResourceAttachAMD");
-	auto func = reinterpret_cast<bool(*)(cct::Int64, cct::Int64, cct::Int64)>(res)(0, 0, 0);
 	return bestIndex;
 }
 
@@ -375,7 +373,17 @@ BOOL wglCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
-	return GetWglIcdLibrary().DrvCopyContext(hglrcSrc, hglrcDst, mask);
+	auto* src = reinterpret_cast<glgpus::IcdDeviceContextWrapper*>(hglrcSrc);
+	auto* dst = reinterpret_cast<glgpus::IcdDeviceContextWrapper*>(hglrcDst);
+
+	if (src == nullptr || dst == nullptr)
+	{
+		GLGPUS_ASSERT_FALSE("Invalid HGLRC handle passed to wglCopyContext");
+		SetLastError(ERROR_INVALID_HANDLE);
+		return false;
+	}
+
+	return GetWglIcdLibrary().DrvCopyContext(static_cast<HGLRC>(src->IcdDeviceContext), static_cast<HGLRC>(dst->IcdDeviceContext), mask);
 }
 
 int  wglDescribeLayerPlane(HDC hdc, int pixelFormat, int layerPlane, UINT nBytes, void* plpd)
