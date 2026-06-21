@@ -7,6 +7,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <vector>
+
 #include <Concerto/Core/DynLib/DynLib.hpp>
 
 #include "OpenGl32/Defines.hpp"
@@ -36,18 +37,21 @@ namespace glgpus
 		template<typename T>
 		T& GetPlatformIcd()
 		{
-		#ifdef CCT_DEBUG
+#ifdef CCT_DEBUG
 			CCT_ASSERT(m_icdLibrary && dynamic_cast<T*>(m_icdLibrary.get()), "T must inherits from IcdLibrary");
-		#endif
+#endif
 			return static_cast<T&>(*m_icdLibrary);
 		}
 
 		void EnsureInitialized();
-		bool IsInitialized() const { return m_initialized; }
+		bool IsInitialized() const
+		{
+			return m_initialized;
+		}
 
 #ifdef CCT_PLATFORM_WINDOWS
 		void SetSelectedPixelFormatIndex(HDC hdc, int index);
-		int  GetSelectedPixelFormatIndex(HDC hdc) const;
+		int GetSelectedPixelFormatIndex(HDC hdc) const;
 #endif
 
 		void SetCurrentDeviceContextForCurrentThread(IcdDeviceContextWrapper& currentDeviceContext);
@@ -58,6 +62,7 @@ namespace glgpus
 
 		void SetCurrentValue(void* currentValue);
 		void* GetCurrentValue() const;
+
 	private:
 		static std::unique_ptr<IcdLoader> s_instance;
 		std::unique_ptr<IcdLibrary> m_icdLibrary;
@@ -70,4 +75,4 @@ namespace glgpus
 
 		void* m_currentValue;
 	};
-}
+} // namespace glgpus

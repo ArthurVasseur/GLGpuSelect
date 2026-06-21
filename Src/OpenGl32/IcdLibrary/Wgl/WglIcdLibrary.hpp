@@ -7,8 +7,8 @@
 #include <Concerto/Core/DynLib/DynLib.hpp>
 
 #include "OpenGl32/IcdLibrary/IcdLibrary.hpp"
-#include "OpenGl32/WglDispatchTable.hpp"
 #include "OpenGl32/IcdLoader/Wgl.hpp"
+#include "OpenGl32/WglDispatchTable.hpp"
 
 namespace glgpus
 {
@@ -19,7 +19,7 @@ namespace glgpus
 		bool Load(std::string_view icdPath) override;
 
 		BOOL DrvSetPixelFormat(HDC hdc, int pixelFormat) const;
-		int  DrvDescribePixelFormat(HDC hdc, int pixelFormat, UINT nBytes, PIXELFORMATDESCRIPTOR* ppfd) const;
+		int DrvDescribePixelFormat(HDC hdc, int pixelFormat, UINT nBytes, PIXELFORMATDESCRIPTOR* ppfd) const;
 		HGLRC DrvCreateContext(HDC hdc) const;
 		HGLRC DrvCreateLayerContext(HDC hdc, int layerPlane) const;
 		BOOL DrvDeleteContext(HGLRC hglrc) const;
@@ -27,7 +27,7 @@ namespace glgpus
 		const GlProcTable* DrvSetContext(HDC hdc, HGLRC hglrc, PFN_SetProcTable procTable) const;
 		BOOL DrvShareLists(HGLRC hglrc1, HGLRC hglrc2) const;
 		BOOL DrvCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask) const;
-		int  DrvDescribeLayerPlane(HDC hdc, int pixelFormat, int layerPlane, UINT nBytes, void* plpd) const;
+		int DrvDescribeLayerPlane(HDC hdc, int pixelFormat, int layerPlane, UINT nBytes, void* plpd) const;
 		BOOL DrvSetLayerPaletteEntries(HDC hdc, int layerPlane, int start, int entriesCount, const void* pcr) const;
 		BOOL DrvGetLayerPaletteEntries(HDC hdc, int layerPlane, int start, int entriesCount, int* pcr) const;
 		BOOL DrvSwapBuffers(HDC hdc) const;
@@ -38,6 +38,7 @@ namespace glgpus
 		void DrvSetCallbackProcs(int size, PROC* procs) const;
 		BOOL DrvRealizeLayerPalette(HDC hdc, int layerPlane, BOOL bRealize) const;
 		BOOL DrvPresentBuffers(HDC hdc, WGLPRESENTBUFFERSDATA* data) const;
+
 	private:
 		struct DrvProcTable
 		{
@@ -47,7 +48,7 @@ namespace glgpus
 			cct::FunctionRef<HGLRC(HDC, int)> DrvCreateLayerContext;
 			cct::FunctionRef<BOOL(HGLRC)> DrvDeleteContext;
 			cct::FunctionRef<BOOL(DHGLRC)> DrvReleaseContext;
-			cct::FunctionRef<const GlProcTable* (HDC, HGLRC, PFN_SetProcTable)> DrvSetContext;
+			cct::FunctionRef<const GlProcTable*(HDC, HGLRC, PFN_SetProcTable)> DrvSetContext;
 			cct::FunctionRef<BOOL(HGLRC, HGLRC)> DrvShareLists;
 			cct::FunctionRef<BOOL(HGLRC, HGLRC, UINT)> DrvCopyContext;
 			cct::FunctionRef<int(HDC, int, int, UINT, void*)> DrvDescribeLayerPlane;
@@ -55,7 +56,7 @@ namespace glgpus
 			cct::FunctionRef<BOOL(HDC, int, int, int, int*)> DrvGetLayerPaletteEntries;
 			cct::FunctionRef<BOOL(HDC)> DrvSwapBuffers;
 			cct::FunctionRef<BOOL(HDC, UINT)> DrvSwapLayerBuffers;
-			cct::FunctionRef<void* (LPCSTR)> DrvGetProcAddress;
+			cct::FunctionRef<void*(LPCSTR)> DrvGetProcAddress;
 
 			cct::FunctionRef<BOOL(ULONG)> DrvValidateVersion;
 			cct::FunctionRef<void(int, PROC*)> DrvSetCallbackProcs;

@@ -28,10 +28,22 @@ namespace glgpus
 		void SetCurrentValue(void* currentValue);
 		void* GetCurrentValue() const;
 
-		virtual void* GetIcdContext() const { return nullptr; }
-		virtual bool DeleteContext() { return false; }
-		virtual bool ShareLists(void* otherIcdContext) { return false; }
-		virtual bool CopyContext(void* srcIcdContext, unsigned int mask) { return false; }
+		virtual void* GetIcdContext() const
+		{
+			return nullptr;
+		}
+		virtual bool DeleteContext()
+		{
+			return false;
+		}
+		virtual bool ShareLists(void* otherIcdContext)
+		{
+			return false;
+		}
+		virtual bool CopyContext(void* srcIcdContext, unsigned int mask)
+		{
+			return false;
+		}
 
 	private:
 		OpenGlDispatchTable m_dispatchTable;
@@ -43,6 +55,9 @@ namespace glgpus
 	struct IcdDeviceContextWrapper
 	{
 		DeviceContext* DeviceContext = nullptr;
-		~IcdDeviceContextWrapper() { delete DeviceContext; }
+		~IcdDeviceContextWrapper()
+		{
+			delete DeviceContext;
+		}
 	};
 } // namespace glgpus

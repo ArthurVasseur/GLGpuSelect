@@ -4,46 +4,48 @@
 
 #pragma once
 
-#include <Concerto/Core/Types/Types.hpp>
 #include <Concerto/Core/Assert.hpp>
 #include <Concerto/Core/DeferredExit/DeferredExit.hpp>
+#include <Concerto/Core/Types/Types.hpp>
+
 #include "OpenGl32/GLGpuSelect.h"
 
 #ifdef GLGPUS_PROFILING
-	#define TRACY_ENABLE
-	#include <tracy/Tracy.hpp>
-	#include <source_location>
-	#define GLGPUS_PROFILER_SCOPE(name) ZoneScopedN(name)
-	#define GLGPUS_AUTO_PROFILER_SCOPE() ZoneScoped
+#define TRACY_ENABLE
+#include <source_location>
+
+#include <tracy/Tracy.hpp>
+#define GLGPUS_PROFILER_SCOPE(name) ZoneScopedN(name)
+#define GLGPUS_AUTO_PROFILER_SCOPE() ZoneScoped
 #else
-	#define GLGPUS_PROFILER_SCOPE(name)
-	#define GLGPUS_AUTO_PROFILER_SCOPE()
+#define GLGPUS_PROFILER_SCOPE(name)
+#define GLGPUS_AUTO_PROFILER_SCOPE()
 #endif
 
 #ifdef GLGPUS_ASSERTS
-	#define GLGPUS_ASSERT(expression, fmt, ...) CCT_ASSERT(expression, fmt, __VA_ARGS__)
-	#define GLGPUS_ASSERT_FALSE(fmt, ...) CCT_ASSERT_FALSE(fmt, __VA_ARGS__)
+#define GLGPUS_ASSERT(expression, fmt, ...) CCT_ASSERT(expression, fmt, __VA_ARGS__)
+#define GLGPUS_ASSERT_FALSE(fmt, ...) CCT_ASSERT_FALSE(fmt, __VA_ARGS__)
 #else
-	#define GLGPUS_ASSERT(expression, fmt, ...)
-	#define GLGPUS_ASSERT_FALSE(fmt, ...)
+#define GLGPUS_ASSERT(expression, fmt, ...)
+#define GLGPUS_ASSERT_FALSE(fmt, ...)
 #endif
 
 #ifdef GLGPUS_LOGGING
-	#include <Concerto/Core/Logger/Logger.hpp>
-	#define GLGPUS_LOG_ERROR(fmt, ...) cct::Logger::Error(fmt, __VA_ARGS__)
-	#define GLGPUS_LOG_WARN(fmt, ...) cct::Logger::Warning(fmt, __VA_ARGS__)
-	#define GLGPUS_LOG_INFO(fmt, ...) cct::Logger::Info(fmt, __VA_ARGS__)
+#include <Concerto/Core/Logger/Logger.hpp>
+#define GLGPUS_LOG_ERROR(fmt, ...) cct::Logger::Error(fmt, __VA_ARGS__)
+#define GLGPUS_LOG_WARN(fmt, ...) cct::Logger::Warning(fmt, __VA_ARGS__)
+#define GLGPUS_LOG_INFO(fmt, ...) cct::Logger::Info(fmt, __VA_ARGS__)
 #ifdef CCT_DEBUG
-	#define GLGPUS_LOG_DEBUG(fmt, ...) cct::Logger::Debug(fmt, __VA_ARGS__)
+#define GLGPUS_LOG_DEBUG(fmt, ...) cct::Logger::Debug(fmt, __VA_ARGS__)
 #else
-	#define GLGPUS_LOG_DEBUG(fmt, ...) 
+#define GLGPUS_LOG_DEBUG(fmt, ...)
 #endif
 #else
-	#define GLGPUS_LOG_ERROR(fmt, ...)
-	#define GLGPUS_LOG_WARN(fmt, ...)
-	#define GLGPUS_LOG_INFO(fmt, ...)
-	#define GLGPUS_LOG_DEBUG(fmt, ...) 
-#endif 
+#define GLGPUS_LOG_ERROR(fmt, ...)
+#define GLGPUS_LOG_WARN(fmt, ...)
+#define GLGPUS_LOG_INFO(fmt, ...)
+#define GLGPUS_LOG_DEBUG(fmt, ...)
+#endif
 
 #define GLGPUS_LOG_CONTEXT_MANIPULATION
 
@@ -73,8 +75,8 @@ using GLintptr = ptrdiff_t;
 using GLsizeiptr = ptrdiff_t;
 using GLuint64 = cct::UInt64;
 using GLsync = struct __GLsync*;
-using GLDEBUGPROCAMD = void (CCT_CALL*)(GLuint id, GLenum category, GLenum severity, GLsizei length, const GLchar* message, void* userParam);
-using GLDEBUGPROC = void (CCT_CALL*)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
+using GLDEBUGPROCAMD = void(CCT_CALL*)(GLuint id, GLenum category, GLenum severity, GLsizei length, const GLchar* message, void* userParam);
+using GLDEBUGPROC = void(CCT_CALL*)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
 using GLint64 = cct::Int64;
 using GLclampx = cct::Int32;
 
@@ -106,7 +108,6 @@ namespace glgpus
 		Intel = 0x8086
 	};
 
-
 	inline std::string ToUtf8(const wchar_t* wstr)
 	{
 		std::mbstate_t state = {};
@@ -124,5 +125,4 @@ namespace glgpus
 		return name;
 	}
 
-
-}
+} // namespace glgpus

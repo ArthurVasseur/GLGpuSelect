@@ -2,13 +2,13 @@
 #error Not a C compiler
 #endif
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+
 #include <OpenGl32/GLGpuSelect.h>
 
 int main(void)
 {
-
 	uint32_t deviceCount = 0;
 	uint32_t result = glgpusEnumerateDevices(&deviceCount, NULL);
 	if (result != 0)
@@ -30,7 +30,7 @@ int main(void)
 
 	free(adapters);
 
-	//Then call your OpenGL init code here ChoosePixelFormat, on windows, eglChooseConfig on Linux, etc.
+	// Then call your OpenGL init code here ChoosePixelFormat, on windows, eglChooseConfig on Linux, etc.
 
 	return EXIT_SUCCESS;
 }

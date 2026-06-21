@@ -116,7 +116,7 @@ namespace glgpus
 		}
 		{
 			GLGPUS_PROFILER_SCOPE("cct::DynLib::GetFunction(DrvGetLayerPaletteEntries)");
-			m_drvProcTable.DrvGetLayerPaletteEntries = m_icd.GetFunction<BOOL, HDC, int, int, int, int* >("DrvGetLayerPaletteEntries");
+			m_drvProcTable.DrvGetLayerPaletteEntries = m_icd.GetFunction<BOOL, HDC, int, int, int, int*>("DrvGetLayerPaletteEntries");
 			if (!m_drvProcTable.DrvGetLayerPaletteEntries)
 			{
 				GLGPUS_ASSERT_FALSE("Could not find 'DrvGetLayerPaletteEntries' in ICD");
@@ -150,7 +150,6 @@ namespace glgpus
 				SetLastError(ERROR_PROC_NOT_FOUND);
 			}
 		}
-
 
 		{
 			GLGPUS_PROFILER_SCOPE("cct::DynLib::GetFunction(DrvValidateVersion)");

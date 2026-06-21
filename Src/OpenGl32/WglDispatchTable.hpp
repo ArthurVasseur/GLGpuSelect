@@ -10,7 +10,7 @@ namespace glgpus
 	// From gldrv.h https://learn.microsoft.com/fr-fr/windows-hardware/drivers/download-the-wdk
 	struct WglDispatchTable
 	{
-		//OpenGl 1.0
+		// OpenGl 1.0
 		void(CCT_CALL* glNewList)(GLuint list, GLenum mode);
 		void(CCT_CALL* glEndList)();
 		void(CCT_CALL* glCallList)(GLuint list);
@@ -286,7 +286,7 @@ namespace glgpus
 		void(CCT_CALL* glGetPixelMapuiv)(GLenum map, GLuint* values);
 		void(CCT_CALL* glGetPixelMapusv)(GLenum map, GLushort* values);
 		void(CCT_CALL* glGetPolygonStipple)(GLubyte* mask);
-		const GLubyte* (CCT_CALL* glGetString)(GLenum name);
+		const GLubyte*(CCT_CALL* glGetString)(GLenum name);
 		void(CCT_CALL* glGetTexEnvfv)(GLenum target, GLenum pname, GLfloat* params);
 		void(CCT_CALL* glGetTexEnviv)(GLenum target, GLenum pname, GLint* params);
 		void(CCT_CALL* glGetTexGendv)(GLenum coord, GLenum pname, GLdouble* params);
@@ -318,7 +318,7 @@ namespace glgpus
 		void(CCT_CALL* glTranslatef)(GLfloat x, GLfloat y, GLfloat z);
 		void(CCT_CALL* glViewport)(GLint x, GLint y, GLsizei width, GLsizei height);
 
-		//OpengGl 1.1
+		// OpengGl 1.1
 		void(CCT_CALL* glArrayElement)(GLint i);
 		void(CCT_CALL* glBindTexture)(GLenum target, GLuint texture);
 		void(CCT_CALL* glColorPointer)(GLint size, GLenum type, GLsizei stride, const GLvoid* pointer);

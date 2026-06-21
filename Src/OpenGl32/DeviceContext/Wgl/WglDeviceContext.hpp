@@ -16,7 +16,10 @@ namespace glgpus
 	public:
 		WglDeviceContext(HDC hdc, void* icdContext);
 
-		void* GetIcdContext() const override { return m_icdContext; }
+		void* GetIcdContext() const override
+		{
+			return m_icdContext;
+		}
 		bool DeleteContext() override;
 		bool ShareLists(void* otherIcdContext) override;
 		bool CopyContext(void* srcIcdContext, unsigned int mask) override;

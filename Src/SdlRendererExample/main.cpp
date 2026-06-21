@@ -7,13 +7,14 @@
  * This code is public domain. Feel free to use it for any purpose!
  */
 
-#define SDL_MAIN_USE_CALLBACKS 1  /* use the callbacks instead of main() */
+#define SDL_MAIN_USE_CALLBACKS 1 /* use the callbacks instead of main() */
 #include <vector>
 #include <Windows.h>
+
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
- /* We will use this renderer to draw into this window every frame. */
+/* We will use this renderer to draw into this window every frame. */
 static SDL_Window* window = NULL;
 static SDL_Renderer* renderer = NULL;
 
@@ -27,7 +28,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 	SDL_SetAppMetadata("Example OpenGL Renderer Rectangles", "1.0", "com.example.renderer-rectangles");
 	auto r = SDL_SetHint(SDL_HINT_LOGGING, "*=verbose");
 
-	if (!SDL_Init(SDL_INIT_VIDEO)) {
+	if (!SDL_Init(SDL_INIT_VIDEO))
+	{
 		SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
 		return SDL_APP_FAILURE;
 	}
@@ -44,9 +46,9 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 		"examples/renderer/rectangles",
 		WINDOW_WIDTH,
 		WINDOW_HEIGHT,
-		SDL_WINDOW_OPENGL
-	);
-	if (!window) {
+		SDL_WINDOW_OPENGL);
+	if (!window)
+	{
 		SDL_Log("Couldn't create window: %s", SDL_GetError());
 		return SDL_APP_FAILURE;
 	}
@@ -62,20 +64,22 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 
 	/* Create a renderer explicitly using the "opengl" driver */
 	renderer = SDL_CreateRenderer(window, "opengl");
-	if (!renderer) {
+	if (!renderer)
+	{
 		SDL_Log("Couldn't create OpenGL renderer: %s", SDL_GetError());
 		SDL_DestroyWindow(window);
 		return SDL_APP_FAILURE;
 	}
 
-	return SDL_APP_CONTINUE;  /* carry on with the program! */
+	return SDL_APP_CONTINUE; /* carry on with the program! */
 }
 
 /* This function runs when a new event (mouse input, keypresses, etc) occurs. */
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 {
-	if (event->type == SDL_EVENT_QUIT) {
-		return SDL_APP_SUCCESS;  /* end the program, reporting success to the OS. */
+	if (event->type == SDL_EVENT_QUIT)
+	{
+		return SDL_APP_SUCCESS; /* end the program, reporting success to the OS. */
 	}
 	return SDL_APP_CONTINUE;
 }
@@ -102,7 +106,8 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 	SDL_RenderRect(renderer, &rects[0]);
 
 	/* three green centered outline rectangles */
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 3; i++)
+	{
 		float size = (i + 1) * 50.0f;
 		rects[i].w = rects[i].h = size + (size * scale);
 		rects[i].x = (WINDOW_WIDTH - rects[i].w) / 2;
@@ -120,7 +125,8 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 	SDL_RenderFillRect(renderer, &rects[0]);
 
 	/* white filled bar chart */
-	for (i = 0; i < SDL_arraysize(rects); i++) {
+	for (i = 0; i < SDL_arraysize(rects); i++)
+	{
 		float w = (float)(WINDOW_WIDTH / SDL_arraysize(rects));
 		float h = i * 8.0f;
 		rects[i].x = i * w;

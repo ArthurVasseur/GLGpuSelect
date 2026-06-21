@@ -2,12 +2,14 @@
 // Created by arthur on 23/04/2025.
 //
 
-#include <array>
-#include <Concerto/Core/Assert.hpp>
-#include <Concerto/Core/Types/Types.hpp>
-#include <Concerto/Core/Error/Error.hpp>
-
 #include "OpenGl32/IcdLoader/Wgl.hpp"
+
+#include <array>
+
+#include <Concerto/Core/Assert.hpp>
+#include <Concerto/Core/Error/Error.hpp>
+#include <Concerto/Core/Types/Types.hpp>
+
 #include "OpenGl32/DeviceContext/DeviceContext.hpp"
 #include "OpenGl32/DeviceContext/Wgl/WglDeviceContext.hpp"
 #include "OpenGl32/IcdLibrary/Wgl/WglIcdLibrary.hpp"
@@ -80,7 +82,7 @@ namespace
 		GLGPUS_ASSERT(instance != nullptr, "IcdLoader instance is null");
 		return instance->GetPlatformIcd<glgpus::WglIcdLibrary>();
 	}
-}
+} // namespace
 
 extern "C" GLGPUS_API void CCT_CALL wglSetCurrentValue(void* value)
 {
@@ -123,7 +125,7 @@ int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 	// Entries 3-8 are D3DKMTPresent/DC-query callbacks we don't implement; pass null.
 	static std::once_flag s_callbacksFlag;
 	std::call_once(s_callbacksFlag, [&]()
-	{
+				   {
 		std::array<FARPROC, 9> callbacks = {
 			reinterpret_cast<FARPROC>(wglSetCurrentValue),
 			reinterpret_cast<FARPROC>(wglGetCurrentValue),
@@ -135,8 +137,7 @@ int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 			nullptr, // D3DKMTPresent (blit)
 			nullptr, // D3DKMTSubmitPresentToHwQueue (flip)
 		};
-		GetIcdLibrary().DrvSetCallbackProcs(static_cast<int>(callbacks.size()), callbacks.data());
-	});
+		GetIcdLibrary().DrvSetCallbackProcs(static_cast<int>(callbacks.size()), callbacks.data()); });
 
 	if (ppfd == nullptr)
 		return 0;
@@ -154,7 +155,7 @@ int wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
 			bestScore = score;
 			bestIndex = i;
 			if (score == 0)
-				break;  // perfect match
+				break; // perfect match
 		}
 	}
 
@@ -258,19 +259,20 @@ BOOL wglDeleteContext(HGLRC hglrc)
 			return false;
 		}
 		GLGPUS_LOG_WARN("Attempted to delete an active HGLRC ({}); automatically unbinding the context. "
-						"Please ensure you call wglMakeCurrent(NULL, NULL) before deleting the context in your code.", reinterpret_cast<void*>(hglrc));
+						"Please ensure you call wglMakeCurrent(NULL, NULL) before deleting the context in your code.",
+						reinterpret_cast<void*>(hglrc));
 		if (!wglMakeCurrent(nullptr, nullptr))
 			return false;
 	}
 
 #ifdef GLGPUS_LOG_CONTEXT_MANIPULATION
 	GLGPUS_LOG_WARN("wglDeleteContext(hglrc {}) associated hdc: {}",
-		icdDeviceContextWrapper->DeviceContext->GetIcdContext(),
-		icdDeviceContextWrapper->DeviceContext->GetPlatformDeviceContext());
+					icdDeviceContextWrapper->DeviceContext->GetIcdContext(),
+					icdDeviceContextWrapper->DeviceContext->GetPlatformDeviceContext());
 #endif
 
 	bool result = icdDeviceContextWrapper->DeviceContext->DeleteContext();
-	delete icdDeviceContextWrapper;  // destructor handles DeviceContext
+	delete icdDeviceContextWrapper; // destructor handles DeviceContext
 
 	return result;
 }
@@ -296,7 +298,7 @@ BOOL wglMakeCurrent(HDC hdc, HGLRC hglrc)
 
 #ifdef GLGPUS_LOG_CONTEXT_MANIPULATION
 	GLGPUS_LOG_WARN("wglMakeCurrent(hdc {}, hglrc: {})", static_cast<void*>(hdc),
-		icdDeviceContextWrapper ? icdDeviceContextWrapper->DeviceContext->GetIcdContext() : nullptr);
+					icdDeviceContextWrapper ? icdDeviceContextWrapper->DeviceContext->GetIcdContext() : nullptr);
 #endif
 
 	if (icdDeviceContextWrapper == nullptr)
@@ -354,7 +356,7 @@ HGLRC wglGetCurrentContext()
 	return reinterpret_cast<HGLRC>(deviceContext);
 }
 
-HDC  wglGetCurrentDC()
+HDC wglGetCurrentDC()
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
@@ -402,7 +404,7 @@ BOOL wglCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask)
 	return dst->DeviceContext->CopyContext(src->DeviceContext->GetIcdContext(), mask);
 }
 
-int  wglDescribeLayerPlane(HDC hdc, int pixelFormat, int layerPlane, UINT nBytes, void* plpd)
+int wglDescribeLayerPlane(HDC hdc, int pixelFormat, int layerPlane, UINT nBytes, void* plpd)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
@@ -416,14 +418,14 @@ BOOL wglRealizeLayerPalette(HDC hdc, int layerPlane, BOOL bRealize)
 	return GetIcdLibrary().DrvRealizeLayerPalette(hdc, layerPlane, bRealize);
 }
 
-int  wglSetLayerPaletteEntries(HDC hdc, int layerPlane, int start, int numEntries, const void* pe)
+int wglSetLayerPaletteEntries(HDC hdc, int layerPlane, int start, int numEntries, const void* pe)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 
 	return GetIcdLibrary().DrvSetLayerPaletteEntries(hdc, layerPlane, start, numEntries, pe);
 }
 
-int  wglGetLayerPaletteEntries(HDC hdc, int layerPlane, int start, int numEntries, int* pcr)
+int wglGetLayerPaletteEntries(HDC hdc, int layerPlane, int start, int numEntries, int* pcr)
 {
 	GLGPUS_AUTO_PROFILER_SCOPE();
 

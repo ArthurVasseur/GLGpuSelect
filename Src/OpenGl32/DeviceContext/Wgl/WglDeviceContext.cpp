@@ -5,8 +5,8 @@
 #include "OpenGl32/DeviceContext/Wgl/WglDeviceContext.hpp"
 
 #ifdef CCT_PLATFORM_WINDOWS
-#include "OpenGl32/IcdLoader/IcdLoader.hpp"
 #include "OpenGl32/IcdLibrary/Wgl/WglIcdLibrary.hpp"
+#include "OpenGl32/IcdLoader/IcdLoader.hpp"
 
 namespace glgpus
 {

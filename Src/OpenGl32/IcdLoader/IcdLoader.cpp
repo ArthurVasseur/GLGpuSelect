@@ -2,17 +2,18 @@
 // Created by arthur on 23/04/2025.
 //
 
-#include <vector>
-#include <array>
-#include <Concerto/Core/Result/Result.hpp>
-
 #include "OpenGl32/IcdLoader/IcdLoader.hpp"
+
+#include <array>
+#include <vector>
+
+#include <Concerto/Core/Result/Result.hpp>
 
 #include "OpenGl32/DeviceContext/DeviceContext.hpp"
 
 #ifdef CCT_PLATFORM_WINDOWS
-#include <Windows.h>
 #include <d3dkmthk.h>
+#include <Windows.h>
 #undef min
 #undef max
 #define NT_SUCCESS(v) (v >= 0)
@@ -44,8 +45,8 @@ namespace glgpus
 			std::array<D3DKMT_ADAPTERINFO, MAX_ENUM_ADAPTERS> adapterInfos;
 
 			D3DKMT_ENUMADAPTERS2 enumAdapters = {
-			  .NumAdapters = adapterInfos.size(),
-			  .pAdapters = adapterInfos.data(),
+				.NumAdapters = adapterInfos.size(),
+				.pAdapters = adapterInfos.data(),
 			};
 
 			NTSTATUS status = {};
@@ -60,7 +61,7 @@ namespace glgpus
 				return glgpusResult::Success;
 
 			cct::DeferredExit _([&]()
-				{
+								{
 					for (uint32_t i = 0; i < enumAdapters.NumAdapters; i++)
 					{
 						D3DKMT_CLOSEADAPTER close_adapter = {
@@ -69,8 +70,7 @@ namespace glgpus
 						GLGPUS_PROFILER_SCOPE("D3DKMTCloseAdapter");
 						status = D3DKMTCloseAdapter(&close_adapter);
 						GLGPUS_ASSERT(NT_SUCCESS(status), "D3DKMTCloseAdapter failed");
-					}
-				});
+					} });
 
 			for (uint32_t i = 0; i < enumAdapters.NumAdapters; i++)
 			{
@@ -110,7 +110,6 @@ namespace glgpus
 					GLGPUS_ASSERT(address.DeviceNumber <= std::numeric_limits<cct::UInt8>::max(), "Invalid size");
 					GLGPUS_ASSERT(address.FunctionNumber <= std::numeric_limits<cct::UInt8>::max(), "Invalid size");
 
-
 					D3DKMT_OPENGLINFO oglInfo = {};
 					status = QueryAdapterInfo(adapterInfos[i].hAdapter, KMTQAITYPE_UMOPENGLINFO, &oglInfo, sizeof(oglInfo));
 					if (!NT_SUCCESS(status))
@@ -126,8 +125,7 @@ namespace glgpus
 
 					D3DKMT_OPENADAPTERFROMLUID openAdapter = {
 						.AdapterLuid = adapterInfos[i].AdapterLuid,
-						.hAdapter = 0
-					};
+						.hAdapter = 0};
 
 					{
 						GLGPUS_PROFILER_SCOPE("D3DKMTOpenAdapterFromLuid");
@@ -141,16 +139,15 @@ namespace glgpus
 					};
 
 					cct::DeferredExit __([&]()
-						{
+										 {
 							GLGPUS_PROFILER_SCOPE("D3DKMTCloseAdapter");
 							status = D3DKMTCloseAdapter(&closeAdapter);
-							GLGPUS_ASSERT(NT_SUCCESS(status), "D3DKMTCloseAdapter failed");
-						});
+							GLGPUS_ASSERT(NT_SUCCESS(status), "D3DKMTCloseAdapter failed"); });
 					D3DKMT_ADAPTERREGISTRYINFO registry = {};
 					status = QueryAdapterInfo(openAdapter.hAdapter, KMTQAITYPE_ADAPTERREGISTRYINFO_RENDER, &registry, sizeof(registry));
 					if (!NT_SUCCESS(status))
 					{
-						//if KMTQAITYPE_ADAPTERREGISTRYINFO_RENDER is not available, try get the driver description renderer
+						// if KMTQAITYPE_ADAPTERREGISTRYINFO_RENDER is not available, try get the driver description renderer
 						D3DKMT_DRIVER_DESCRIPTION registry = {};
 						status = QueryAdapterInfo(openAdapter.hAdapter, KMTQAITYPE_DRIVER_DESCRIPTION_RENDER, &registry, sizeof(registry));
 						if (!NT_SUCCESS(status))
@@ -178,8 +175,7 @@ namespace glgpus
 			std::memcpy(&luid, &pDeviceUuid, sizeof(cct::UInt64));
 			D3DKMT_OPENADAPTERFROMLUID openAdapter = {
 				.AdapterLuid = luid,
-				.hAdapter = 0
-			};
+				.hAdapter = 0};
 
 			auto status = D3DKMTOpenAdapterFromLuid(&openAdapter);
 			if (!NT_SUCCESS(status))
@@ -192,7 +188,7 @@ namespace glgpus
 
 			return ToUtf8(oglInfo.UmdOpenGlIcdFileName);
 		}
-	}
+	} // namespace wddm
 #endif
 	std::unique_ptr<IcdLoader> IcdLoader::s_instance = nullptr;
 
@@ -209,11 +205,10 @@ namespace glgpus
 	{
 		static std::once_flag s_initFlag;
 		std::call_once(s_initFlag, []()
-		{
+					   {
 			auto* instance = new(std::nothrow) IcdLoader();
 			if (instance)
-				s_instance.reset(instance);
-		});
+				s_instance.reset(instance); });
 		return s_instance.get();
 	}
 
@@ -286,7 +281,7 @@ namespace glgpus
 #ifdef CCT_PLATFORM_WINDOWS
 		static std::once_flag s_icdInitFlag;
 		std::call_once(s_icdInitFlag, [this]()
-		{
+					   {
 			EnumerateAdapters(nullptr, nullptr);
 			const auto& adapters = GetAdapterInfos();
 			if (adapters.empty())
@@ -318,8 +313,7 @@ namespace glgpus
 				return;
 			}
 
-			m_initialized = true;
-		});
+			m_initialized = true; });
 #endif
 	}
 
@@ -377,7 +371,8 @@ namespace glgpus
 		auto* currentDeviceContext = GetCurrentDeviceContextForCurrentThread();
 		if (currentDeviceContext && currentDeviceContext->DeviceContext)
 			currentDeviceContext->DeviceContext->SetCurrentValue(currentValue);
-		else m_currentValue = currentValue;
+		else
+			m_currentValue = currentValue;
 	}
 
 	void* IcdLoader::GetCurrentValue() const
@@ -387,7 +382,7 @@ namespace glgpus
 			return currentDeviceContext->DeviceContext->GetCurrentValue();
 		return m_currentValue;
 	}
-}
+} // namespace glgpus
 
 cct::UInt32 glgpusEnumerateDevices(cct::UInt32* pPhysicalDeviceCount, AdapterInfo* pDevices)
 {

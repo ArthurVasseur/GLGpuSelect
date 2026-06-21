@@ -28,8 +28,8 @@ extern "C"
 {
 #endif
 
-GLGPUS_API uint32_t CCT_CALL glgpusEnumerateDevices(uint32_t* pPhysicalDeviceCount, AdapterInfo* pDevices);
-GLGPUS_API uint32_t CCT_CALL glgpusChooseDevice(uint64_t pDeviceUuid);
+	GLGPUS_API uint32_t CCT_CALL glgpusEnumerateDevices(uint32_t* pPhysicalDeviceCount, AdapterInfo* pDevices);
+	GLGPUS_API uint32_t CCT_CALL glgpusChooseDevice(uint64_t pDeviceUuid);
 
 #ifdef CCT_LANGUAGE_CPP
 }

@@ -36,7 +36,7 @@ namespace glgpus
 
 	bool DeviceContext::IsActive() const
 	{
-		return m_activeOnThread != std::thread::id {};
+		return m_activeOnThread != std::thread::id{};
 	}
 
 	void DeviceContext::SetInactive()
