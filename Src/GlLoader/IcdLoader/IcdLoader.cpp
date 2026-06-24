@@ -2,14 +2,14 @@
 // Created by arthur on 23/04/2025.
 //
 
-#include "OpenGl32/IcdLoader/IcdLoader.hpp"
+#include "GlLoader/IcdLoader/IcdLoader.hpp"
 
 #include <array>
 #include <vector>
 
 #include <Concerto/Core/Result/Result.hpp>
 
-#include "OpenGl32/DeviceContext/DeviceContext.hpp"
+#include "GlLoader/DeviceContext/DeviceContext.hpp"
 
 #ifdef CCT_PLATFORM_WINDOWS
 #include <d3dkmthk.h>
@@ -17,7 +17,6 @@
 #undef min
 #undef max
 #define NT_SUCCESS(v) (v >= 0)
-#include "OpenGl32/IcdLibrary/Wgl/WglIcdLibrary.hpp"
 #endif
 namespace glgpus
 {
@@ -193,12 +192,26 @@ namespace glgpus
 	std::unique_ptr<IcdLoader> IcdLoader::s_instance = nullptr;
 
 	IcdLoader::IcdLoader() :
-#ifdef CCT_PLATFORM_WINDOWS
-		m_icdLibrary(std::make_unique<WglIcdLibrary>()),
-#endif
 		m_initialized(false),
 		m_currentValue(nullptr)
 	{
+	}
+
+	IcdLoader::~IcdLoader()
+	{
+		for (std::size_t i = 0; i < m_layers.size(); ++i)
+		{
+			if (m_layerDestroyFns[i] != nullptr)
+				m_layerDestroyFns[i](m_layers[i]);
+		}
+		m_layers.clear();
+		m_layerDestroyFns.clear();
+
+		if (m_driver != nullptr && m_driverDestroy != nullptr)
+		{
+			m_driverDestroy(m_driver);
+			m_driver = nullptr;
+		}
 	}
 
 	IcdLoader* IcdLoader::Instance()
@@ -248,9 +261,9 @@ namespace glgpus
 		if (icdPathResult.IsError())
 			return MakeResult(icdPathResult.GetError(), "Failed to choose device");
 
-		m_icdLibrary->Load(icdPathResult.GetValue());
-		if (!m_icdLibrary->IsLoaded())
-			return MakeResult(glgpusResult::Unknown, "Could not open icd file for the given device");
+		BuildChain(icdPathResult.GetValue());
+		if (!m_driver)
+			return MakeResult(glgpusResult::Unknown, "Could not load driver for the given device");
 
 		AdapterInfo* adapterInfo = nullptr;
 		for (auto& info : m_adapterInfos)
@@ -270,10 +283,85 @@ namespace glgpus
 		return 0;
 	}
 
-	IcdLibrary& IcdLoader::GetIcd() const
+	gl::GlDriver& IcdLoader::GetDriver() const
 	{
-		GLGPUS_ASSERT(m_icdLibrary != nullptr, "ICD library is not loaded");
-		return *m_icdLibrary;
+		GLGPUS_ASSERT(m_driver != nullptr, "Driver is not loaded");
+		return *m_driver;
+	}
+
+	const std::vector<gl::GlLayer*>& IcdLoader::GetLayers() const
+	{
+		return m_layers;
+	}
+
+	void IcdLoader::BuildChain(std::string_view icdPath)
+	{
+		if (!m_driverLib.Load("gl-icd-driver.dll"))
+		{
+			GLGPUS_ASSERT_FALSE("Could not load gl-icd-driver.dll");
+			return;
+		}
+
+		auto driverCreate = m_driverLib.GetFunction<gl::GlDriver*, const char*>("glDriverCreate");
+		if (!driverCreate)
+		{
+			GLGPUS_ASSERT_FALSE("Could not find 'glDriverCreate' in gl-icd-driver.dll");
+			return;
+		}
+
+		m_driverDestroy = reinterpret_cast<void (*)(gl::GlDriver*)>(m_driverLib.GetSymbol("glDriverDestroy"));
+		if (m_driverDestroy == nullptr)
+			GLGPUS_ASSERT_FALSE("Could not find 'glDriverDestroy' in gl-icd-driver.dll");
+
+		m_driver = driverCreate(std::string(icdPath).c_str());
+		if (m_driver == nullptr)
+		{
+			GLGPUS_ASSERT_FALSE("glDriverCreate failed");
+			return;
+		}
+
+		const char* layerEnvVar = std::getenv("GL_LAYERS");
+		if (layerEnvVar == nullptr)
+			return;
+
+		std::string_view layerList(layerEnvVar);
+		std::size_t start = 0;
+		while (start < layerList.size())
+		{
+			const std::size_t end = layerList.find(';', start);
+			const std::size_t len = (end == std::string_view::npos ? layerList.size() : end) - start;
+			const std::string_view dllPath = layerList.substr(start, len);
+			start += len + 1;
+
+			if (dllPath.empty())
+			{
+				continue;
+			}
+
+			auto& lib = m_layerLibs.emplace_back();
+			if (!lib.Load(std::string(dllPath)))
+			{
+				GLGPUS_ASSERT_FALSE("Could not load layer DLL");
+				continue;
+			}
+
+			auto layerCreate = lib.GetFunction<gl::GlLayer*>("glLayerCreate");
+			if (!layerCreate)
+			{
+				GLGPUS_ASSERT_FALSE("Could not find 'glLayerCreate' in layer DLL");
+				continue;
+			}
+
+			auto* layerDestroy = reinterpret_cast<void (*)(gl::GlLayer*)>(lib.GetSymbol("glLayerDestroy"));
+			if (layerDestroy == nullptr)
+				GLGPUS_ASSERT_FALSE("Could not find 'glLayerDestroy' in layer DLL");
+
+			if (auto* layer = layerCreate())
+			{
+				m_layers.push_back(layer);
+				m_layerDestroyFns.push_back(layerDestroy);
+			}
+		}
 	}
 
 	void IcdLoader::EnsureInitialized()
@@ -307,7 +395,7 @@ namespace glgpus
 				return;
 			}
 
-			if (GetPlatformIcd<WglIcdLibrary>().DrvValidateVersion(selectedAdapter.openGlVersion) == 0)
+			if (m_driver->ValidateVersion(selectedAdapter.openGlVersion) == 0)
 			{
 				GLGPUS_ASSERT_FALSE("Invalid ICD version");
 				return;

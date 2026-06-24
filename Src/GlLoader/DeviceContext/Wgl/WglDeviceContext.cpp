@@ -2,11 +2,10 @@
 // Created by arthur on 23/04/2025.
 //
 
-#include "OpenGl32/DeviceContext/Wgl/WglDeviceContext.hpp"
+#include "GlLoader/DeviceContext/Wgl/WglDeviceContext.hpp"
 
 #ifdef CCT_PLATFORM_WINDOWS
-#include "OpenGl32/IcdLibrary/Wgl/WglIcdLibrary.hpp"
-#include "OpenGl32/IcdLoader/IcdLoader.hpp"
+#include "GlLoader/IcdLoader/IcdLoader.hpp"
 
 namespace glgpus
 {
@@ -18,19 +17,19 @@ namespace glgpus
 
 	bool WglDeviceContext::DeleteContext()
 	{
-		return IcdLoader::Instance()->GetPlatformIcd<WglIcdLibrary>().DrvDeleteContext(static_cast<HGLRC>(m_icdContext));
+		return IcdLoader::Instance()->GetDriver().DeleteContext(static_cast<HGLRC>(m_icdContext));
 	}
 
 	bool WglDeviceContext::ShareLists(void* otherIcdContext)
 	{
-		return IcdLoader::Instance()->GetPlatformIcd<WglIcdLibrary>().DrvShareLists(
+		return IcdLoader::Instance()->GetDriver().ShareLists(
 			static_cast<HGLRC>(m_icdContext),
 			static_cast<HGLRC>(otherIcdContext));
 	}
 
 	bool WglDeviceContext::CopyContext(void* srcIcdContext, unsigned int mask)
 	{
-		return IcdLoader::Instance()->GetPlatformIcd<WglIcdLibrary>().DrvCopyContext(
+		return IcdLoader::Instance()->GetDriver().CopyContext(
 			static_cast<HGLRC>(srcIcdContext),
 			static_cast<HGLRC>(m_icdContext),
 			static_cast<UINT>(mask));

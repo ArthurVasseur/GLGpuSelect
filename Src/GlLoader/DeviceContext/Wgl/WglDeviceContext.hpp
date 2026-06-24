@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "OpenGl32/DeviceContext/DeviceContext.hpp"
+#include "GlLoader/DeviceContext/DeviceContext.hpp"
 
 #ifdef CCT_PLATFORM_WINDOWS
-#include "OpenGl32/IcdLoader/Wgl.hpp"
+#include "GlLoader/IcdLoader/Wgl.hpp"
 
 namespace glgpus
 {

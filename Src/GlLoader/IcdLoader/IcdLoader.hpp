@@ -5,14 +5,16 @@
 #pragma once
 
 #include <mutex>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
 #include <Concerto/Core/DynLib/DynLib.hpp>
 
-#include "OpenGl32/Defines.hpp"
-#include "OpenGl32/GLGpuSelect.h"
-#include "OpenGl32/IcdLibrary/IcdLibrary.hpp"
+#include "GlDriver/GlDriver.hpp"
+#include "GlLayer/GlLayer.hpp"
+#include "GlLoader/Defines.hpp"
+#include "GlLoader/GLGpuSelect.h"
 
 #ifdef CCT_PLATFORM_WINDOWS
 #include <Windows.h>
@@ -28,20 +30,13 @@ namespace glgpus
 	{
 	public:
 		IcdLoader();
+		~IcdLoader();
 		static IcdLoader* Instance();
 		cct::UInt32 EnumerateAdapters(cct::UInt32* pPhysicalDeviceCount, AdapterInfo* pDevices);
 		cct::UInt32 ChooseDevice(cct::UInt64 pDeviceUuid);
 
-		IcdLibrary& GetIcd() const;
-
-		template<typename T>
-		T& GetPlatformIcd()
-		{
-#ifdef CCT_DEBUG
-			CCT_ASSERT(m_icdLibrary && dynamic_cast<T*>(m_icdLibrary.get()), "T must inherits from IcdLibrary");
-#endif
-			return static_cast<T&>(*m_icdLibrary);
-		}
+		gl::GlDriver& GetDriver() const;
+		const std::vector<gl::GlLayer*>& GetLayers() const;
 
 		void EnsureInitialized();
 		bool IsInitialized() const
@@ -64,8 +59,15 @@ namespace glgpus
 		void* GetCurrentValue() const;
 
 	private:
+		void BuildChain(std::string_view icdPath);
+
 		static std::unique_ptr<IcdLoader> s_instance;
-		std::unique_ptr<IcdLibrary> m_icdLibrary;
+		gl::GlDriver* m_driver = nullptr;
+		void (*m_driverDestroy)(gl::GlDriver*) = nullptr;
+		std::vector<gl::GlLayer*> m_layers;
+		std::vector<void (*)(gl::GlLayer*)> m_layerDestroyFns;
+		cct::DynLib m_driverLib;
+		std::vector<cct::DynLib> m_layerLibs;
 		std::vector<AdapterInfo> m_adapterInfos;
 		bool m_initialized;
 

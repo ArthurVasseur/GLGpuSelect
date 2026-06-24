@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "OpenGl32/OpenGlFunctions.hpp"
+#include "GlLoader/OpenGlFunctions.hpp"
 #ifdef CCT_PLATFORM_WINDOWS
 
 #include <Windows.h>

@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <OpenGl32/GLGpuSelect.h>
+#include <GlLoader/GLGpuSelect.h>
 
 int main(void)
 {

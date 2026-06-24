@@ -27,17 +27,18 @@ def collect_commands_for_versions(root: ET.Element, features=FEATURES):
     return cmds
 
 
-def generate_dispatch_table(cmds, h_path: str, cpp_path: str):
+def generate_dispatch_table(cmds, h_path: str, cpp_path: str = None):
     """
     Generate C++ header and source files for a dispatch table.
     """
 
+    os.makedirs(os.path.dirname(h_path), exist_ok=True)
     with open(h_path, 'w') as h:
         h.write("// Auto-generated dispatch table for OpenGL\n")
         h.write("#pragma once\n")
-        h.write("#include \"OpenGl32/Defines.hpp\"\n")
+        h.write("#include \"GlLoader/Defines.hpp\"\n")
         h.write("#ifdef CCT_PLATFORM_WINDOWS\n")
-        h.write('#include "OpenGl32/WglDispatchTable.hpp"\n')
+        h.write('#include "GlLoader/WglDispatchTable.hpp"\n')
         h.write("#endif // CCT_PLATFORM_WINDOWS\n")
         h.write("namespace glgpus {\n")
         h.write("void* GetFromDispatchTable(const char* name);\n")
@@ -52,17 +53,31 @@ def generate_dispatch_table(cmds, h_path: str, cpp_path: str):
 
         h.write("#ifdef CCT_PLATFORM_WINDOWS\n")
         h.write("OpenGlDispatchTable WglDispatchTableToOpenGlDispatchTable(const WglDispatchTable& wglDispatchTable);\n")
+        h.write("\n")
+        h.write("inline OpenGlDispatchTable BuildDispatchTableFromIcd(\n")
+        h.write("    const WglDispatchTable& wglTable,\n")
+        h.write("    void* (*getDrvProc)(const char*))\n")
+        h.write("{\n")
+        h.write("    OpenGlDispatchTable table = {};\n")
+        feature_set = set(FEATURE_COMMANDS)
+        for name in cmds:
+            if name in feature_set:
+                h.write(f"    table.{name} = wglTable.{name};\n")
+            else:
+                h.write(f'    table.{name} = reinterpret_cast<decltype(table.{name})>(getDrvProc("{name}"));\n')
+        h.write("    return table;\n")
+        h.write("}\n")
         h.write("#endif // CCT_PLATFORM_WINDOWS\n")
         h.write("\n} // namespace glgpus\n\n")
 
+    if cpp_path is None:
+        return
+
     with open(cpp_path, 'w') as cpp:
         cpp.write("// Auto-generated dispatch table for OpenGL\n")
-        cpp.write('#include "OpenGl32/OpenGlFunctions.hpp"\n')
-        cpp.write('#include "OpenGl32/IcdLoader/IcdLoader.hpp"\n')
-        cpp.write('#include "OpenGl32/DeviceContext/DeviceContext.hpp"\n')
-        cpp.write('#ifdef CCT_PLATFORM_WINDOWS\n')
-        cpp.write('#include "OpenGl32/IcdLibrary/Wgl/WglIcdLibrary.hpp"\n')
-        cpp.write('#endif // CCT_PLATFORM_WINDOWS\n')
+        cpp.write('#include "GlLoader/OpenGlFunctions.hpp"\n')
+        cpp.write('#include "GlLoader/IcdLoader/IcdLoader.hpp"\n')
+        cpp.write('#include "GlLoader/DeviceContext/DeviceContext.hpp"\n')
         for name, (param_name, param_type, ret_type) in cmds.items():
             parameters = []
             for ptype, pname in zip(param_type, param_name):
@@ -78,9 +93,9 @@ extern "C" GLGPUS_API {ret_type} CCT_CALL {name}({parameters})
         CCT_ASSERT_FALSE("IcdLoader::Instance() returned nullptr");
         return {default_ret_type};
     }}
-    if (!instance->GetIcd().IsLoaded())
+    if (!instance->IsInitialized())
     {{
-        CCT_ASSERT_FALSE("Invalid ICD library");
+        CCT_ASSERT_FALSE("ICD not initialized");
         return {default_ret_type};
     }}
 
@@ -111,9 +126,9 @@ extern "C" GLGPUS_API {ret_type} CCT_CALL {name}({parameters})
         CCT_ASSERT_FALSE("IcdLoader::Instance() returned nullptr");
         return nullptr;
     }
-    if (!instance->GetIcd().IsLoaded())
+    if (!instance->IsInitialized())
     {
-        CCT_ASSERT_FALSE("Invalid ICD library");
+        CCT_ASSERT_FALSE("ICD not initialized");
         return nullptr;
     }
 
@@ -132,9 +147,9 @@ extern "C" GLGPUS_API {ret_type} CCT_CALL {name}({parameters})
         cpp.write("    return nullptr;\n")
         cpp.write("}\n")
 
+        feature_set = set(FEATURE_COMMANDS)
         cpp.write("#ifdef CCT_PLATFORM_WINDOWS\n")
         cpp.write("glgpus::OpenGlDispatchTable glgpus::WglDispatchTableToOpenGlDispatchTable(const glgpus::WglDispatchTable& wglDispatchTable)\n{\n")
-    
         cpp.write("    OpenGlDispatchTable dispatchTable;\n")
         cpp.write("""    auto* glgpusInstance = glgpus::IcdLoader::Instance();
     if (glgpusInstance == nullptr)
@@ -144,16 +159,12 @@ extern "C" GLGPUS_API {ret_type} CCT_CALL {name}({parameters})
     }
 """)
         for name, (param_name, param_type, ret_type) in cmds.items():
-            parameters = []
-            for ptype, pname in zip(param_type, param_name):
-                parameters.append(f"{ptype} {pname}")
-            if name in FEATURE_COMMANDS:
+            if name in feature_set:
                 cpp.write(f"    dispatchTable.{name} = wglDispatchTable.{name};\n")
             else:
-                cpp.write(f"    dispatchTable.{name} = (decltype(dispatchTable.{name}))glgpusInstance->GetPlatformIcd<glgpus::WglIcdLibrary>().DrvGetProcAddress(\"{name}\");\n")
+                cpp.write(f'    dispatchTable.{name} = reinterpret_cast<decltype(dispatchTable.{name})>(glgpusInstance->GetDriver().GetProcAddress("{name}"));\n')
         cpp.write("    return dispatchTable;\n")
         cpp.write("}\n")
-
         cpp.write("#endif // CCT_PLATFORM_WINDOWS\n")
   
 
@@ -162,7 +173,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate C++.")
     parser.add_argument('xml', help='Path to input xml file')
     parser.add_argument('hpp', help='Path to output hpp file')
-    parser.add_argument('cpp', help='Path to output cpp file')
+    parser.add_argument('cpp', nargs='?', default=None, help='Path to output cpp file (optional)')
     args = parser.parse_args()
 
     if not os.path.exists(args.xml):  
@@ -211,7 +222,7 @@ def main():
                        func_param_type,
                        ret_type)
 
-    if not os.path.exists(args.cpp):
+    if args.cpp is not None and not os.path.exists(args.cpp):
         os.makedirs(os.path.dirname(args.cpp), exist_ok=True)
 
     generate_dispatch_table(full_cmds, args.hpp, args.cpp)

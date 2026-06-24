@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "OpenGl32/Defines.hpp"
+#include "GlLoader/Defines.hpp"
 
 namespace glgpus
 {

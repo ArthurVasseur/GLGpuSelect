@@ -2,7 +2,7 @@
 // Created by arthur on 23/04/2025.
 //
 
-#include "OpenGl32/DeviceContext/DeviceContext.hpp"
+#include "GlLoader/DeviceContext/DeviceContext.hpp"
 
 namespace glgpus
 {

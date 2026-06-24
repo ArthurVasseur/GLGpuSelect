@@ -6,7 +6,7 @@
 
 #include <thread>
 
-#include "OpenGl32/OpenGlFunctions.hpp"
+#include "GlLoader/OpenGlFunctions.hpp"
 
 namespace glgpus
 {

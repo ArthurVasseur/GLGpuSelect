@@ -8,7 +8,7 @@
 #include <Concerto/Core/DeferredExit/DeferredExit.hpp>
 #include <Concerto/Core/Types/Types.hpp>
 
-#include "OpenGl32/GLGpuSelect.h"
+#include "GlLoader/GLGpuSelect.h"
 
 #ifdef GLGPUS_PROFILING
 #define TRACY_ENABLE
